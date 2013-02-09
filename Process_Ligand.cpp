@@ -48,6 +48,7 @@ int main(int argv, char* argc[]){
 
 	int atom_index=0;    // starts atom indexing at
 	int reference=0;     // output reference PDB file
+	int convert_only=0;  // convert only PDB, do not process;
 
 	int verbose=0;       // outputing detailed informations
 	char filename[MAX_PATH]; // PDB ligand file
@@ -97,7 +98,7 @@ int main(int argv, char* argc[]){
 	parse_command_line(argv,argc,filename,outname,&verbose,
 			   &hydro_flex,&remove_hydro,&force_gpa,&force_pcg,
 			   &atom_index,&force_outres,extract_string,
-			   &reference,&old_types,&new_types,&babel_types);
+			   &reference,&old_types,&new_types,&babel_types,&convert_only);
 			
 	
 	map_atom = (int*)malloc(MAX_MAP*sizeof(int));
@@ -139,6 +140,8 @@ int main(int argv, char* argc[]){
 
 	}
 	
+	if(convert_only) { return 0; }
+
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
 	// no atoms matches the extraction list OR no atoms in PDB/MOL2 file.
 	if(atoms == NULL || n_atoms == 0){ printf("ERROR: no atoms found\n"); return 1;}
@@ -2396,7 +2399,7 @@ void print_command_line(){
 void parse_command_line(int argv, char** argc, char* filename, char* outname,int* verbose, 
 			int* hydro_flex, int* remove_hydro, int* force_gpa, float** force_pcg, 
 			int* atom_index, residue* force_outres, char* extract_string, int* reference, 
-			int* old_types, int* new_types, int* babel_types){
+			int* old_types, int* new_types, int* babel_types, int* convert_only){
 	
 	int i;
 	
@@ -2413,6 +2416,8 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			strcpy(outname,argc[++i]);
 		}else if(!strcmp(argc[i],"-e")){
 			strcpy(extract_string,argc[++i]);
+		}else if(!strcmp(argc[i],"-c")){
+			*convert_only=1;
 		}else if(!strcmp(argc[i],"-v")){
 			*verbose=atoi(argc[++i]);
 			//*verbose=1;
