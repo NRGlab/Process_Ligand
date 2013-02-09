@@ -2376,7 +2376,8 @@ void print_command_line(){
 	printf("Facultative argument(s):\n");
 	printf("\t%-50s%-50s\n", "-v <INT>", "sets verbose level");
 	printf("\t%-50s%-50s\n", "-o <STR>", "sets the output base filename");
-	printf("\t%-50s%-50s\n", "-e <STR>", "sets a residue to extract in the file (only works for .mol2/.pdb files)\n");
+	printf("\t%-50s%-50s\n", "-e <STR>", "sets a residue to extract in the file (only works for .mol2/.pdb files)");
+	printf("\t%-50s%-50s\n", "-c", "converts a molecule only without processing it\n");
 	//printf("\t%-50s%-50s\n", "-hf", "includes hydrogen flexible bonds");
 	//printf("\t%-50s%-50s\n", "-wh", "adds hydrogen atoms in output files\n");
 	printf("\t%-50s%-50s\n", "-ref", "outputs the final PDB file from the IC\n");
