@@ -140,7 +140,10 @@ int main(int argv, char* argc[]){
 
 	}
 	
-	if(convert_only) { return 0; }
+	if(convert_only) {
+		printf("Done.\n");
+		return 0; 
+	}
 
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
 	// no atoms matches the extraction list OR no atoms in PDB/MOL2 file.
