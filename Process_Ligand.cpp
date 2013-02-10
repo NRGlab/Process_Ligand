@@ -48,7 +48,9 @@ int main(int argv, char* argc[]){
 
 	int atom_index=0;    // starts atom indexing at
 	int reference=0;     // output reference PDB file
+
 	int convert_only=0;  // convert only PDB, do not process;
+	int gen3D=0;         // generate a 3d conformation of the ligand
 
 	int verbose=0;       // outputing detailed informations
 	char filename[MAX_PATH]; // PDB ligand file
@@ -98,7 +100,8 @@ int main(int argv, char* argc[]){
 	parse_command_line(argv,argc,filename,outname,&verbose,
 			   &hydro_flex,&remove_hydro,&force_gpa,&force_pcg,
 			   &atom_index,&force_outres,extract_string,
-			   &reference,&old_types,&new_types,&babel_types,&convert_only);
+			   &reference,&old_types,&new_types,&babel_types,
+			   &convert_only,&gen3D);
 			
 	
 	map_atom = (int*)malloc(MAX_MAP*sizeof(int));
@@ -128,10 +131,10 @@ int main(int argv, char* argc[]){
 		memset(ori_pcg,0.0f,3*sizeof(float));
 	}
 
-	
+ 
 	if(strcmp(UPPER(informat),"MOL2")){
 
-		if(!(n=Convert_2_MOL2(filename,informat,error))){
+		if(!(n=Convert_2_MOL2(filename,informat,error,gen3D))){
 			fprintf(stderr,"%s",error);
 			return(2);
 		}else{
@@ -460,7 +463,7 @@ int Copy_OriginalMOL2(char* oldfilename, char* error){
 	
 }
 
-int Convert_2_MOL2(char* filename, const char* informat, char* error){
+int Convert_2_MOL2(char* filename, const char* informat, char* error,int gen3D){
 	
 	ifstream ifs_exist;
 	char suffix[10];
@@ -497,6 +500,8 @@ int Convert_2_MOL2(char* filename, const char* informat, char* error){
 	conv.AddOption("h",OpenBabel::OBConversion::GENOPTIONS);
 	// physiological pH
 	conv.AddOption("p",OpenBabel::OBConversion::GENOPTIONS,"7.0");
+	// generate 3D conf.
+	if(gen3D){ conv.AddOption("gen3D",OpenBabel::OBConversion::GENOPTIONS); }
 	
 	int n = conv.Convert();
 
@@ -2390,11 +2395,10 @@ void print_command_line(){
 	printf("\t%-50s%-50s\n", "--res_number <INT>", "sets the ligand number\n");
 	printf("\t%-50s%-50s\n", "--force_gpa <INT>", "forces a reference atom (not yet working when converting is necessary)");
 	printf("\t%-50s%-50s\n", "--force_pcg <FLOAT FLOAT FLOAT>", "forces a protein center of geometry\n");
-
+	printf("\t%-50s%-50s\n", "--gen3D", "generates a 3D conformation of the ligand\n");
 	printf("\t%-50s%-50s\n", "--old_types", "uses the old atom types (I-VIII)");
 	printf("\t%-50s%-50s\n", "--new_types", "uses the new atom types (I-XII)");	
 	printf("\t%-50s%-50s\n", "--babel_types", "uses the babel atom types (I-XXVI)\n");
-
 	printf("\t%-50s%-50s\n", "--help", "prints this help menu");
 	printf("\n");
 
@@ -2403,7 +2407,7 @@ void print_command_line(){
 void parse_command_line(int argv, char** argc, char* filename, char* outname,int* verbose, 
 			int* hydro_flex, int* remove_hydro, int* force_gpa, float** force_pcg, 
 			int* atom_index, residue* force_outres, char* extract_string, int* reference, 
-			int* old_types, int* new_types, int* babel_types, int* convert_only){
+			int* old_types, int* new_types, int* babel_types, int* convert_only, int* gen3D){
 	
 	int i;
 	
@@ -2422,6 +2426,8 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			strcpy(extract_string,argc[++i]);
 		}else if(!strcmp(argc[i],"-c")){
 			*convert_only=1;
+		}else if(!strcmp(argc[i],"--gen3D")){
+			*gen3D=1;
 		}else if(!strcmp(argc[i],"-v")){
 			*verbose=atoi(argc[++i]);
 			//*verbose=1;
