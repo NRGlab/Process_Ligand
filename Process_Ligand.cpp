@@ -132,16 +132,17 @@ int main(int argv, char* argc[]){
 	}
 
  
-	if(strcmp(UPPER(informat),"MOL2")){
+	// always convert in case a user wants to generate a 3D structure from a MOL2
+	//if(strcmp(UPPER(informat),"MOL2")){
 
-		if(!(n=Convert_2_MOL2(filename,informat,error,gen3D))){
-			fprintf(stderr,"%s",error);
-			return(2);
-		}else{
-			printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
-		}
+	if(!(n=Convert_2_MOL2(filename,informat,error,gen3D))){
+		fprintf(stderr,"%s",error);
+		return(2);
+	}else{
+		printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
+        }
 
-	}
+	//}
 	
 	if(convert_only) {
 		printf("Done.\n");
