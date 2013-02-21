@@ -50,6 +50,7 @@ int main(int argv, char* argc[]){
 	int reference=0;     // output reference PDB file
 
 	int convert_only=0;  // convert only PDB, do not process;
+	int process_only=0;  // convert only PDB, do not process;
 	int gen3D=0;         // generate a 3d conformation of the ligand
 
 	int verbose=0;       // outputing detailed informations
@@ -65,6 +66,8 @@ int main(int argv, char* argc[]){
 	residue force_outres;	
 
 	char informat[6];
+	char outformat[6] = "mol2";
+
 	char extract_string[1000];
 	residue* extract;
 	int n_extract = 0;
@@ -81,7 +84,7 @@ int main(int argv, char* argc[]){
 	strcpy(outres.name,"LIG");
 	outres.chain = ' ';
 	outres.number = 9999;
-		
+	
 	// set default protein center geometry
 	pcg1.number = 0;        //invariable
 	pcg2.number = 0;        //invariable
@@ -96,12 +99,11 @@ int main(int argv, char* argc[]){
 	pcg1.coor[0] = 1.0f;
 	pcg3.coor[1] = 1.0f;
 
-	
 	parse_command_line(argv,argc,filename,outname,&verbose,
 			   &hydro_flex,&remove_hydro,&force_gpa,&force_pcg,
 			   &atom_index,&force_outres,extract_string,
 			   &reference,&old_types,&new_types,&babel_types,
-			   &convert_only,&gen3D);
+			   &convert_only,&process_only,&gen3D,outformat);
 			
 	
 	map_atom = (int*)malloc(MAX_MAP*sizeof(int));
@@ -110,13 +112,6 @@ int main(int argv, char* argc[]){
 	}else{
 		memset(map_atom,-1,MAX_MAP*sizeof(int));
 	}
-	
-	if(get_Format(filename,informat)){
-		fprintf(stderr,"ERROR: unknown format for file %s\n", filename);
-		return(2);
-	}
-	printf("File format is '%s'\n", informat);
-
 	
 	extract = get_Extract_List(extract_string,&n_extract,&outres,informat);
 	
@@ -131,24 +126,34 @@ int main(int argv, char* argc[]){
 		memset(ori_pcg,0.0f,3*sizeof(float));
 	}
 
- 
-	// always convert in case a user wants to generate a 3D structure from a MOL2
-	//if(strcmp(UPPER(informat),"MOL2")){
+	if(!process_only){
 
-	if(!(n=Convert_2_MOL2(filename,informat,error,gen3D))){
-		fprintf(stderr,"%s",error);
-		return(2);
-	}else{
-		printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
-        }
+		if(get_Format(filename,informat)){
+			fprintf(stderr,"ERROR: unknown format for file %s\n", filename);
+			return(2);
+		}
 
-	//}
+		printf("File format is '%s'\n", informat);
+
+		/*
+		if(convert_only){
+			printf("Output file format is '%s'\n", outformat);
+		}
+		*/
 	
-	if(convert_only) {
-		printf("Done.\n");
-		return 0; 
+		if(!(n=Convert_2_MOL2(filename,informat,outformat,error,convert_only,gen3D))){
+			fprintf(stderr,"%s",error);
+			return(2);
+		}else{
+			printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
+		}
+		
+		if(convert_only) {
+			printf("Done.\n");
+			return 0; 
+		}
 	}
-
+	
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
 	// no atoms matches the extraction list OR no atoms in PDB/MOL2 file.
 	if(atoms == NULL || n_atoms == 0){ printf("ERROR: no atoms found\n"); return 1;}
@@ -414,7 +419,7 @@ void set_AtomTypes(atom* atoms, int n_atoms, int old_types, int new_types, int b
 				set_AtomTypes_SOBOLEV(&atoms[j],verbose);
 			}
 		}
-
+		
 		// Carbons only
 		for(int j=0; j<n_atoms; ++j){
 			if(!strncmp(atoms[j].type,"C.",2)){
@@ -464,32 +469,47 @@ int Copy_OriginalMOL2(char* oldfilename, char* error){
 	
 }
 
-int Convert_2_MOL2(char* filename, const char* informat, char* error,int gen3D){
+int Convert_2_MOL2(char* filename, const char* informat, const char* outformat, char* error,int convert_only,int gen3D){
 	
 	ifstream ifs_exist;
 	char suffix[10];
 	//int i=2;
 
+	//cout << "will open " << filename << " for input" << endl;
+	
 	ifstream ifs(filename);
 	if(!ifs){
 		strcpy(error,"ERROR: could not open input file for Convert\n");
 		return 0;
 	}
 
-	char* pch = strrchr(filename,'.');
+	char outfilename[MAX_PATH];
+	strcpy(outfilename,filename);
+
+	char* pch = strrchr(outfilename,'.');
 	strcpy(suffix,".mol2.tmp");
 	strcpy(pch,suffix);
 	
-	//cout << "will open " << filename << " for output" << endl;
+	/*
+	strcpy(suffix,"_tmp.");
+	if(convert_only){
+		strcat(suffix,outformat);
+	}else{
+		strcat(suffix,"mol2");
+	}
+	strcpy(pch,suffix);
+	*/
 
-	ofstream ofs(filename);
+	//cout << "will open " << outfilename << " for output" << endl;
+
+	ofstream ofs(outfilename);
 	if(!ofs){
 		strcpy(error,"ERROR: could not open output file for Convert\n");
 		return 0;
 	}
 
 	OpenBabel::OBConversion conv(&ifs,&ofs);
-	if(!conv.SetInAndOutFormats(informat,"mol2")){
+	if(!conv.SetInAndOutFormats(informat,outformat)){
 		strcpy(error,"ERROR: OpenBabel: Formats not available\n");
 		return 0;
 	}
@@ -505,9 +525,11 @@ int Convert_2_MOL2(char* filename, const char* informat, char* error,int gen3D){
 	if(gen3D){ conv.AddOption("gen3D",OpenBabel::OBConversion::GENOPTIONS); }
 	
 	int n = conv.Convert();
-
+	
 	ofs.close();
 	ifs.close();
+	
+	strcpy(filename,outfilename);
 
 	return(n);
 }
@@ -2386,7 +2408,7 @@ void print_command_line(){
 	printf("\t%-50s%-50s\n", "-v <INT>", "sets verbose level");
 	printf("\t%-50s%-50s\n", "-o <STR>", "sets the output base filename");
 	printf("\t%-50s%-50s\n", "-e <STR>", "sets a residue to extract in the file (only works for .mol2/.pdb files)");
-	printf("\t%-50s%-50s\n", "-c", "converts a molecule only without processing it\n");
+	printf("\t%-50s%-50s\n", "-c <STR>", "converts a molecule only without processing it to a specified format\n");
 	//printf("\t%-50s%-50s\n", "-hf", "includes hydrogen flexible bonds");
 	//printf("\t%-50s%-50s\n", "-wh", "adds hydrogen atoms in output files\n");
 	printf("\t%-50s%-50s\n", "-ref", "outputs the final PDB file from the IC\n");
@@ -2408,7 +2430,8 @@ void print_command_line(){
 void parse_command_line(int argv, char** argc, char* filename, char* outname,int* verbose, 
 			int* hydro_flex, int* remove_hydro, int* force_gpa, float** force_pcg, 
 			int* atom_index, residue* force_outres, char* extract_string, int* reference, 
-			int* old_types, int* new_types, int* babel_types, int* convert_only, int* gen3D){
+			int* old_types, int* new_types, int* babel_types, int* convert_only, 
+			int* process_only, int* gen3D, char* outformat){
 	
 	int i;
 	
@@ -2427,6 +2450,9 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			strcpy(extract_string,argc[++i]);
 		}else if(!strcmp(argc[i],"-c")){
 			*convert_only=1;
+			//strcpy(outformat,argc[++i]);
+		}else if(!strcmp(argc[i],"-p")){
+			*process_only=1;
 		}else if(!strcmp(argc[i],"--gen3D")){
 			*gen3D=1;
 		}else if(!strcmp(argc[i],"-v")){

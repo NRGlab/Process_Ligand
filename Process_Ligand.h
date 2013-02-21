@@ -140,7 +140,8 @@ void print_command_line();
 void parse_command_line(int argv, char** argc, char* filename, char* outname,int* verbose,
 			int* hydro_flex, int* remove_hydro,int* force_gpa, float** force_pcg,
 			int* atom_index, residue* res, char* extract, int* reference, 
-			int* old_types, int* new_types, int* babel_types, int* convert_only, int* gen3D);
+			int* old_types, int* new_types, int* babel_types, int* convert_only, 
+			int* process_only,int* gen3D, char* outformat);
 
 void set_OutBase(char* filename,char* outname, char* basepath, char* informat);
 residue* get_Extract_List(char* extract_string,int* n_extract, residue* res,char* informat);
@@ -151,7 +152,7 @@ void Replace_Hyphens(char* string);
 //atom* read_PDB(char* filename, int* n_atoms, int* map, residue* extract, int n_extract, float* pcg_ori);
 atom* read_MOL2(char* filename, int* n_atoms, int* map, residue* extract, int n_extract, float* pcg_ori, int atom_index);
 int Copy_OriginalMOL2(char* oldfilename, char* error);
-int Convert_2_MOL2(char* filename, const char* informat,char* error,int gen3D);
+int Convert_2_MOL2(char* filename, const char* informat, const char* outformat, char* error,int convert_only,int gen3D);
 int read_Type(char* type);
 int get_Format(char* filename, char* informat);
 
