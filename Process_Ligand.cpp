@@ -343,7 +343,7 @@ int main(int argv, char* argc[]){
 	do{
 		//printf("build all atoms in graph[%d]\n", build_graph->id);
 		
-		while((build=get_Buildable(atoms,n_atoms,build_graph)) != NULL)
+		while((build=get_Buildable(atoms,n_atoms,build_graph,gpa)) != NULL)
 		{
 			get_Shortest_Path(build,atoms,n_atoms);
 			//Print_Paths(atoms,n_atoms);		
@@ -1012,16 +1012,24 @@ subgraph* get_BuildableGraph(subgraph* graph){
 	return NULL;
 }
 
-atom* get_Buildable(atom* atoms, int n_atoms, subgraph* build_graph){
+atom* get_Buildable(atom* atoms, int n_atoms, subgraph* build_graph, atom* gpa){
 	
+	atom* mindist_atom = NULL;
+	float mindist = 1e6f;
+
 	for(int i=0; i<n_atoms; i++){
 		if(atoms[i].build_state == 0 &&
 		   atoms[i].graph == build_graph){
-			return &atoms[i];
+			
+			float dist_ = dist(atoms[i].coor,gpa->coor);
+			if(dist_ < mindist){
+				mindist = dist_;
+				mindist_atom = &atoms[i];
+			}
 		}
 	}
 
-	return NULL;
+	return mindist_atom;
 }
 
 int is_Built(atom* atomb){

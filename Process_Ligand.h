@@ -247,7 +247,7 @@ subgraph* get_GPAGraph(subgraph* graph, atom* gpa);
 int is_AngleGraph(subgraph* anchor_graph, atom* atoms, int n_atoms);
 atom* get_GPA_from_AngleGraph(subgraph* anchor_graph, atom* atoms, int n_atoms);
 atom* get_Free_gpa(atom* atoms, int n_atoms);
-atom* get_Buildable(atom* atoms, int n_atoms,subgraph* graph);
+atom* get_Buildable(atom* atoms, int n_atoms,subgraph* graph, atom* gpa);
 atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence);
 int is_Built(atom* atomb);
 void Reset_Buildable(atom* atoms, int n_atoms);
