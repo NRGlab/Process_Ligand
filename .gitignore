@@ -5,5 +5,5 @@
 *.pdb
 *.sdf
 *.smi
-Process_Ligand*
 Process_Ligand
+Process_Ligand.dSYM
