@@ -93,6 +93,7 @@ struct atom_struct {
 	int   nonmetal;      // atom is a non-metal
 	int   aromatic;      // atom is apart aromatic cycle
 	int   n_bonds;       // number of bonds
+	int   shortest;      // number of atoms in shortest path to GPA
 
 	bond* conect;        // bond structure
 	subgraph* graph;     // subgraph atom belongs to
@@ -160,6 +161,7 @@ int in_stack(atom* atomw, int* st, int n_st);
 void strongconnect(atom* atomv, atom* atomf, atom* atoms, int n_atoms,int* st, int* n_st,
 		   int* n_root, int* scc, int* n_scc, int* index_t);
 int Tarjan(atom* atoms, int n_atoms, int* scc, int* n_scc);
+void save_Shortest_to_GPA(atom* atoms, int n_atoms);
 
 char* UPPER(char* string);
 void get_Element_From_Hybridation(char* string, char* dest);

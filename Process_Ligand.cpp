@@ -268,13 +268,14 @@ int main(int argv, char* argc[]){
 
 			sequence->next_build = gpa2;
 			sequence = sequence->next_build;
-
+			
 			for(j=0; j<n_branch; j++){
 				for(i=1; i<=gpa2->n_bonds; i++){
 					if(!is_Hydrogen(gpa2->conect[i].to) &&
 					   gpa2->conect[i].to != gpa){
 						
-						sequence->next_build = gpa2->conect[i].to;											sequence = sequence->next_build;
+						sequence->next_build = gpa2->conect[i].to;
+						sequence = sequence->next_build;
 						
 						sequence->build_state = 1;
 						sequence->buildlist[0] = gpa2;
@@ -333,7 +334,11 @@ int main(int argv, char* argc[]){
 
 	gpa->gpa = 1;
 	printf("reference gpa atom gpa is %d\n", gpa->number);
-			
+	
+	get_Shortest_Path(gpa,atoms,n_atoms);
+	save_Shortest_to_GPA(atoms,n_atoms);
+	//Print_Paths(atoms,n_atoms);
+	free_Paths(&atoms,n_atoms);
 
 	// build atoms sequence
 	reset_Graph(graph);
@@ -1014,22 +1019,21 @@ subgraph* get_BuildableGraph(subgraph* graph){
 
 atom* get_Buildable(atom* atoms, int n_atoms, subgraph* build_graph, atom* gpa){
 	
-	atom* mindist_atom = NULL;
-	float mindist = 1e6f;
+	atom* mincon_atom = NULL;
+	int mincon = 1000;
 
 	for(int i=0; i<n_atoms; i++){
 		if(atoms[i].build_state == 0 &&
 		   atoms[i].graph == build_graph){
 			
-			float dist_ = dist(atoms[i].coor,gpa->coor);
-			if(dist_ < mindist){
-				mindist = dist_;
-				mindist_atom = &atoms[i];
+			if(atoms[i].shortest < mincon){
+				mincon = atoms[i].shortest;
+				mincon_atom = &atoms[i];
 			}
 		}
 	}
 
-	return mindist_atom;
+	return mincon_atom;
 }
 
 int is_Built(atom* atomb){
@@ -1047,6 +1051,15 @@ int is_Built(atom* atomb){
 	
 	return (atomb->build_state == 1 ? 1 : 0);
 
+}
+
+void save_Shortest_to_GPA(atom* atoms, int n_atoms){
+
+	for(int i=0; i<n_atoms; i++){
+		atoms[i].shortest = atoms[i].sp_paths_n;
+		//printf("atoms[%d].shortest = %d\n", atoms[i].number, atoms[i].shortest);
+	}
+	
 }
 
 atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence){
@@ -2904,7 +2917,8 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 
 			MOL2[*n_atoms].gpa=0;
 			MOL2[*n_atoms].build_state=0;
-
+			MOL2[*n_atoms].shortest=1000;
+			
 			MOL2[*n_atoms].graph = NULL;
 
 			MOL2[*n_atoms].next_build = NULL;
