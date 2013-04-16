@@ -1,0 +1,9 @@
+*.mol2
+*.tmp
+*.inp
+*.ic
+*.pdb
+*.sdf
+*.smi
+Process_Ligand*
+Process_Ligand
