@@ -2466,9 +2466,9 @@ void print_command_line(){
 	printf("\t%-50s%-50s\n", "--force_gpa <INT>", "forces a reference atom (not yet working when converting is necessary)");
 	printf("\t%-50s%-50s\n", "--force_pcg <FLOAT FLOAT FLOAT>", "forces a protein center of geometry\n");
 	printf("\t%-50s%-50s\n", "--gen3D", "generates a 3D conformation of the ligand\n");
-	printf("\t%-50s%-50s\n", "--old_types", "uses the old atom types (I-VIII)");
-	printf("\t%-50s%-50s\n", "--new_types", "uses the new atom types (I-XII)");	
-	printf("\t%-50s%-50s\n", "--sybyl_types", "uses the sybyl atom types (I-XXVI)\n");
+	//printf("\t%-50s%-50s\n", "--old_types", "uses the old atom types (I-VIII)");
+	//printf("\t%-50s%-50s\n", "--new_types", "uses the new atom types (I-XII)");	
+	//printf("\t%-50s%-50s\n", "--sybyl_types", "uses the sybyl atom types (I-XXVI)\n");
 	printf("\t%-50s%-50s\n", "--help", "prints this help menu");
 	printf("\n");
 
