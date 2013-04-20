@@ -44,8 +44,8 @@ int main(int argv, char* argc[]){
 
 	int old_types=0;
 	int new_types=0;
-	int babel_types=0;
-
+	int sybyl_types=1;
+	
 	int atom_index=0;    // starts atom indexing at
 	int reference=0;     // output reference PDB file
 
@@ -102,7 +102,7 @@ int main(int argv, char* argc[]){
 	parse_command_line(argv,argc,filename,outname,&verbose,
 			   &hydro_flex,&remove_hydro,&force_gpa,&force_pcg,
 			   &atom_index,&force_outres,extract_string,
-			   &reference,&old_types,&new_types,&babel_types,
+			   &reference,&old_types,&new_types,&sybyl_types,
 			   &convert_only,&process_only,&gen3D,outformat);
 			
 	
@@ -326,7 +326,7 @@ int main(int argv, char* argc[]){
 
 			sequence->next_build = gpa3;
 			sequence = sequence->next_build;
-	
+			
 		}
 				
 	}
@@ -361,7 +361,7 @@ int main(int argv, char* argc[]){
 	}while((build_graph=get_BuildableGraph(graph)) != NULL);
 	
 	
-	set_AtomTypes(atoms, n_atoms, old_types, new_types, babel_types, verbose);
+	set_AtomTypes(atoms, n_atoms, old_types, new_types, sybyl_types, verbose);
 
 	// Base name in output files
 	set_OutBase(filename,outname,basepath,informat);
@@ -389,7 +389,6 @@ int main(int argv, char* argc[]){
 		Write_REF(reffile, atoms, n_atoms, remove_hydro, &outres, &force_outres);
 	}
 
-
 	// memory dealloc's
 	if(force_pcg != NULL) { free(force_pcg); }
 	if(ori_pcg != NULL) { free(ori_pcg); }
@@ -403,8 +402,9 @@ int main(int argv, char* argc[]){
 	
 	// free up atoms structure in memory
 	for(i=0; i<n_atoms; ++i){
-		if(atoms[i].conect != NULL)
+		if(atoms[i].conect != NULL){
 			free(atoms[i].conect);
+		}
 	}
 	free(atoms);
 	free(map_atom);
@@ -415,7 +415,7 @@ int main(int argv, char* argc[]){
 	return 0;
 }
 
-void set_AtomTypes(atom* atoms, int n_atoms, int old_types, int new_types, int babel_types, int verbose){
+void set_AtomTypes(atom* atoms, int n_atoms, int old_types, int new_types, int sybyl_types, int verbose){
 
 	if(old_types){
 		// all atoms except Carbons
@@ -432,9 +432,9 @@ void set_AtomTypes(atom* atoms, int n_atoms, int old_types, int new_types, int b
 			}
 		}
 
-	}else if(babel_types){
+	}else if(sybyl_types){
 		for(int j=0; j<n_atoms; ++j){
-			set_AtomTypes_BABEL(&atoms[j],verbose);
+			set_AtomTypes_SYBYL(&atoms[j],verbose);
 		}
 
 	}else{ // if(new_types){
@@ -1710,14 +1710,14 @@ int is_Amide(bond* conect){
 	
 	if(!strncmp(conect->to->type,"C.2",3) &&
 	   (!strncmp(conect->from->type,"N.2",3) ||
-	    !strncmp(conect->from->type,"N.am",4) ||
-	    !strncmp(conect->from->type,"N.pl3",5))) {
+	    !strncmp(conect->from->type,"N.AM",4) ||
+	    !strncmp(conect->from->type,"N.PL3",5))) {
 		return 1;
 		
 	}else if(!strncmp(conect->from->type,"C.2",3) &&
 		 (!strncmp(conect->to->type,"N.2",3) ||
-		  !strncmp(conect->to->type,"N.am",4) ||
-		  !strncmp(conect->to->type,"N.pl3",5))) {
+		  !strncmp(conect->to->type,"N.AM",4) ||
+		  !strncmp(conect->to->type,"N.PL3",5))) {
 		return 1;
 	}
 	
@@ -1752,7 +1752,7 @@ int is_Amine(atom* atomzero){
 
 	int n_hydro = 0;
 	
-	if(!strncmp(atomzero->type,"N.2",3) || !strncmp(atomzero->type,"N.pl3",5)){
+	if(!strncmp(atomzero->type,"N.2",3) || !strncmp(atomzero->type,"N.PL3",5)){
 		for(int i=1; i<=atomzero->n_bonds; i++){
 			if(is_Hydrogen(atomzero->conect[i].to)){
 				n_hydro++;
@@ -1767,11 +1767,11 @@ int is_Amine(atom* atomzero){
 
 int is_Aromatic_Amidine(bond* conect){
 
-	if(!strncmp(conect->from->type,"C.ar",4) &&
+	if(!strncmp(conect->from->type,"C.AR",4) &&
 	   is_Carbon_Amine(conect->to)){
 		return 1;
 		
-	}else if(!strncmp(conect->to->type,"C.ar",4) &&
+	}else if(!strncmp(conect->to->type,"C.AR",4) &&
 		 is_Carbon_Amine(conect->from)){
 		
 		return 1;
@@ -1783,11 +1783,11 @@ int is_Aromatic_Amidine(bond* conect){
 
 int is_Aromatic_Sulfonate(bond* conect){
 
-	if(!strncmp(conect->from->type,"C.ar",4) &&
+	if(!strncmp(conect->from->type,"C.AR",4) &&
 	   is_Sulfonate(conect->to)){
 		return 1;
 		
-	}else if(!strncmp(conect->to->type,"C.ar",4) &&
+	}else if(!strncmp(conect->to->type,"C.AR",4) &&
 		 is_Sulfonate(conect->from)){
 		
 		return 1;
@@ -1802,7 +1802,7 @@ int is_Sulfonate(atom* atomzero){
 	int n_oco2 = 0;
 	if(!strncmp(atomzero->type,"S.3",3)){
 		for(int i=1; i<=atomzero->n_bonds; i++){
-			if(!strncmp(atomzero->conect[i].to->type,"O.co2",5)){
+			if(!strncmp(atomzero->conect[i].to->type,"O.CO2",5)){
 				n_oco2++;
 			}
 		}
@@ -1815,11 +1815,11 @@ int is_Sulfonate(atom* atomzero){
 
 int is_Aromatic_Nitro(bond* conect){
 
-	if(!strncmp(conect->from->type,"C.ar",4) &&
+	if(!strncmp(conect->from->type,"C.AR",4) &&
 	   is_Nitro(conect->to)){
 		return 1;
 		
-	}else if(!strncmp(conect->to->type,"C.ar",4) &&
+	}else if(!strncmp(conect->to->type,"C.AR",4) &&
 		 is_Nitro(conect->from)){
 		
 		return 1;
@@ -1844,11 +1844,11 @@ int is_Nitro(atom* atomzero){
 
 int is_Aromatic_Carboxylate(bond* conect){
 
-	if(!strncmp(conect->from->type,"C.ar",4) &&
+	if(!strncmp(conect->from->type,"C.AR",4) &&
 	   is_Carbon_Carboxylate(conect->to)){
 		return 1;
 		
-	}else if(!strncmp(conect->to->type,"C.ar",4) &&
+	}else if(!strncmp(conect->to->type,"C.AR",4) &&
 		 is_Carbon_Carboxylate(conect->from)){
 		
 		return 1;
@@ -1862,9 +1862,9 @@ int is_Carbon_Amine(atom* atomzero){
 
 	int n_amine = 0;
 	
-	if(!strncmp(atomzero->type,"C.cat",5) || !strncmp(atomzero->type,"C.2",3)){
+	if(!strncmp(atomzero->type,"C.CAT",5) || !strncmp(atomzero->type,"C.2",3)){
 		for(int i=1; i<=atomzero->n_bonds; i++){
-			if(!strncmp(atomzero->conect[i].to->type,"N.pl3",5) ||
+			if(!strncmp(atomzero->conect[i].to->type,"N.PL3",5) ||
 			   !strncmp(atomzero->conect[i].to->type,"N.2",3)){
 				n_amine++;
 			}
@@ -1880,9 +1880,9 @@ int is_Carbon_Carboxylate(atom* atomzero){
 
 	int n_oco2 = 0;
 	
-	if(!strncmp(atomzero->type,"C.cat",5) || !strncmp(atomzero->type,"C.2",2)){
+	if(!strncmp(atomzero->type,"C.CAT",5) || !strncmp(atomzero->type,"C.2",2)){
 		for(int i=1; i<=atomzero->n_bonds; i++){
-			if(!strncmp(atomzero->conect[i].to->type,"O.co2",5)){
+			if(!strncmp(atomzero->conect[i].to->type,"O.CO2",5)){
 				n_oco2++;
 			}
 		}
@@ -1968,7 +1968,7 @@ int count_Aromatic(atom* atomzero){
 	int tot=0;
 	
 	for(i=1; i<=atomzero->n_bonds; i++){
-		if(!strncmp(atomzero->conect[i].to->type,"C.ar",4))
+		if(!strncmp(atomzero->conect[i].to->type,"C.AR",4))
 			tot++;
 	}
 
@@ -1989,7 +1989,7 @@ int bonds_Carbocation(atom* atomzero){
 
 	int ncat=0;
 	for(int i=1; i<=atomzero->n_bonds; i++){
-		if(!strncmp(atomzero->conect[i].to->type,"C.cat",5)){ ncat++; }
+		if(!strncmp(atomzero->conect[i].to->type,"C.CAT",5)){ ncat++; }
 	}
 
 	return ncat;
@@ -2042,7 +2042,7 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 
 	// Carbon
 	if(!strncmp(atomzero->type,"C.",2)){
-		if(!strncmp(atomzero->type,"C.ar",4)){
+		if(!strncmp(atomzero->type,"C.AR",4)){
 			atomzero->atomtype = 5;
 
 		}else{
@@ -2070,7 +2070,7 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 		}else if(!strncmp(atomzero->type,"O.2",3)){
 			// Carbonyl group
 			atomzero->atomtype = 2;
-		}else if(!strncmp(atomzero->type,"O.co2",5)){
+		}else if(!strncmp(atomzero->type,"O.CO2",5)){
 			// Carboxyl group
 			atomzero->atomtype = 2;
 		}
@@ -2084,16 +2084,16 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 			
 			if(!strncmp(atomzero->type,"N.4",3)){
 				atomzero->atomtype = 3;
-			}else if(!strncmp(atomzero->type,"N.pl3",5)){
+			}else if(!strncmp(atomzero->type,"N.PL3",5)){
 				atomzero->atomtype = 3;
-			}else if(!strncmp(atomzero->type,"N.am",4)){
+			}else if(!strncmp(atomzero->type,"N.AM",4)){
 				// Amide group (resonance)
 				if(count_Hydrogens(atomzero) > 0){
 					atomzero->atomtype = 3;
 				}else{
 					atomzero->atomtype = 2;
 				}
-			}else if(!strncmp(atomzero->type,"N.ar",4)){
+			}else if(!strncmp(atomzero->type,"N.AR",4)){
 				if(count_Hydrogens(atomzero) > 0){
 					atomzero->atomtype = 3;
 				}else{
@@ -2115,9 +2115,9 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 		atomzero->atomtype = 6;
 
 	     
-	}else if(!strncmp(atomzero->type,"Cl",2)){ // Chloride
+	}else if(!strncmp(atomzero->type,"CL",2)){ // Chloride
 		atomzero->atomtype = 4;
-	}else if(!strncmp(atomzero->type,"Br",2)){ // Bromide
+	}else if(!strncmp(atomzero->type,"BR",2)){ // Bromide
 		atomzero->atomtype = 4;
 	}else if(!strncmp(atomzero->type,"I",1)){ // Iodine
 		atomzero->atomtype = 4;
@@ -2137,7 +2137,7 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 
 }
 
-void set_AtomTypes_BABEL(atom* atomzero, int verbose){
+void set_AtomTypes_SYBYL(atom* atomzero, int verbose){
 	
 	if(!strncmp(atomzero->type,"C.1",3)){
 		atomzero->atomtype = 1;
@@ -2145,9 +2145,9 @@ void set_AtomTypes_BABEL(atom* atomzero, int verbose){
 		atomzero->atomtype = 2;
 	}else if(!strncmp(atomzero->type,"C.3",3)){
 		atomzero->atomtype = 3;
-	}else if(!strncmp(atomzero->type,"C.ar",4)){
+	}else if(!strncmp(atomzero->type,"C.AR",4)){
 		atomzero->atomtype = 4;
-	}else if(!strncmp(atomzero->type,"C.cat",5)){
+	}else if(!strncmp(atomzero->type,"C.CAT",5)){
 		atomzero->atomtype = 5;
 	}else if(!strncmp(atomzero->type,"N.1",3)){
 		atomzero->atomtype = 6;
@@ -2157,40 +2157,67 @@ void set_AtomTypes_BABEL(atom* atomzero, int verbose){
 		atomzero->atomtype = 8;
 	}else if(!strncmp(atomzero->type,"N.4",3)){
 		atomzero->atomtype = 9;
-	}else if(!strncmp(atomzero->type,"N.ar",4)){
+	}else if(!strncmp(atomzero->type,"N.AR",4)){
 		atomzero->atomtype = 10;
-	}else if(!strncmp(atomzero->type,"N.am",4)){
+	}else if(!strncmp(atomzero->type,"N.AM",4)){
 		atomzero->atomtype = 11;
-	}else if(!strncmp(atomzero->type,"N.pl3",5)){
+	}else if(!strncmp(atomzero->type,"N.PL3",5)){
 		atomzero->atomtype = 12;
 	}else if(!strncmp(atomzero->type,"O.2",3)){
 		atomzero->atomtype = 13;
 	}else if(!strncmp(atomzero->type,"O.3",3)){
 		atomzero->atomtype = 14;
-	}else if(!strncmp(atomzero->type,"O.co2",5)){
+	}else if(!strncmp(atomzero->type,"O.CO2",5)){
 		atomzero->atomtype = 15;
-	}else if(!strncmp(atomzero->type,"O.ar",4)){
+	}else if(!strncmp(atomzero->type,"O.AR",4)){
 		atomzero->atomtype = 16;
 	}else if(!strncmp(atomzero->type,"S.2",3)){
 		atomzero->atomtype = 17;
 	}else if(!strncmp(atomzero->type,"S.3",3)){
 		atomzero->atomtype = 18;
-	}else if(!strncmp(atomzero->type,"S.O",3)){
-		atomzero->atomtype = 19;
 	}else if(!strncmp(atomzero->type,"S.O2",4)){
 		atomzero->atomtype = 20;
-	}else if(!strncmp(atomzero->type,"S.ar",4)){
+	}else if(!strncmp(atomzero->type,"S.O",3)){
+		atomzero->atomtype = 19;
+	}else if(!strncmp(atomzero->type,"S.AR",4)){
 		atomzero->atomtype = 21;
 	}else if(!strncmp(atomzero->type,"P.3",3)){
 		atomzero->atomtype = 22;
+	}else if(!strncmp(atomzero->type,"CL",2)){
+		atomzero->atomtype = 24;
+	}else if(!strncmp(atomzero->type,"BR",2)){
+		atomzero->atomtype = 25;
+	}else if(!strncmp(atomzero->type,"SE",2)){
+		atomzero->atomtype = 27;
+	}else if(!strncmp(atomzero->type,"MG",2)){
+		atomzero->atomtype = 28;
+	}else if(!strncmp(atomzero->type,"SR",2)){
+		atomzero->atomtype = 29;
+	}else if(!strncmp(atomzero->type,"CU",2)){
+		atomzero->atomtype = 30;
+	}else if(!strncmp(atomzero->type,"MN",2)){
+		atomzero->atomtype = 31;
+	}else if(!strncmp(atomzero->type,"HG",2)){
+		atomzero->atomtype = 32;
+	}else if(!strncmp(atomzero->type,"CD",2)){
+		atomzero->atomtype = 33;
+	}else if(!strncmp(atomzero->type,"NI",2)){
+		atomzero->atomtype = 34;
+	}else if(!strncmp(atomzero->type,"ZN",2)){
+		atomzero->atomtype = 35;
+	}else if(!strncmp(atomzero->type,"CA",2)){
+		atomzero->atomtype = 36;
+	}else if(!strncmp(atomzero->type,"FE",2)){
+		atomzero->atomtype = 37;
 	}else if(!strncmp(atomzero->type,"F",1)){
 		atomzero->atomtype = 23;
-	}else if(!strncmp(atomzero->type,"Cl",2)){
-		atomzero->atomtype = 24;
-	}else if(!strncmp(atomzero->type,"Br",2)){
-		atomzero->atomtype = 25;
 	}else if(!strncmp(atomzero->type,"I",1)){
 		atomzero->atomtype = 26;
+	}else if(!strncmp(atomzero->type,"CO.OH",5)){
+		atomzero->atomtype = 38;
+	}else{
+		// dummy atom type
+		atomzero->atomtype = 39;
 	}
 
 }
@@ -2200,17 +2227,16 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 	/*
 	        I                  II                 III             IV               V
 	  "Strong_Doneptor", "Strong_Acceptor", "Strong_Donor", "Weak_Doneptor", "Weak_Acceptor",
-
 	      IV          VII          VIII        IX          X          XI             XII
 	  "Halogen", "Hydrophobic", "Aromatic", "Neutral", "Positive", "Negative", "Electrophilic"
 	 */
 
 	// Carbon
 	if(!strncmp(atomzero->type,"C.",2)){
-		if(!strncmp(atomzero->type,"C.ar",4)){
+		if(!strncmp(atomzero->type,"C.AR",4)){
 			atomzero->atomtype = 8;
 
-		}else if(!strncmp(atomzero->type,"C.cat",5)){
+		}else if(!strncmp(atomzero->type,"C.CAT",5)){
 			// guanadinium cation group
 			// positively charged carbon
 			atomzero->atomtype = 9;
@@ -2253,7 +2279,7 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 			// Carbonyl group
 			atomzero->atomtype = 2;				
 
-		}else if(!strncmp(atomzero->type,"O.co2",5)){
+		}else if(!strncmp(atomzero->type,"O.CO2",5)){
 			// Carboxyl group
 			atomzero->atomtype = 11;				
 		
@@ -2285,7 +2311,7 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 			// charged amide (ammomium primary)
 			atomzero->atomtype = 10;						
 			
-		}else if(!strncmp(atomzero->type,"N.pl3",5)){
+		}else if(!strncmp(atomzero->type,"N.PL3",5)){
 			
 			if(is_Guanidium(atomzero)){ //bonds_Carbocation(atomzero)){ 
 				atomzero->atomtype = 10;
@@ -2298,7 +2324,7 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 				atomzero->atomtype = 12;
 			}
 							
-		}else if(!strncmp(atomzero->type,"N.am",4)){
+		}else if(!strncmp(atomzero->type,"N.AM",4)){
 			// Amide group (resonance)
 			if(count_Hydrogens(atomzero) > 0){
 				atomzero->atomtype = 3;
@@ -2311,7 +2337,7 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 
 			}
 
-		}else if(!strncmp(atomzero->type,"N.ar",4)){
+		}else if(!strncmp(atomzero->type,"N.AR",4)){
 			if(count_Hydrogens(atomzero) > 0){
 				atomzero->atomtype = 3;
 			}else{
@@ -2382,8 +2408,8 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 			atomtype_by_charge(atomzero);
 		}
 
-	}else if(!strncmp(atomzero->type,"Br",2) || 
-		 !strncmp(atomzero->type,"Cl",2) || 
+	}else if(!strncmp(atomzero->type,"BR",2) || 
+		 !strncmp(atomzero->type,"CL",2) || 
 		 !strncmp(atomzero->type,"F",1) ||
 		 !strncmp(atomzero->type,"I",1)) {
 		
@@ -2442,7 +2468,7 @@ void print_command_line(){
 	printf("\t%-50s%-50s\n", "--gen3D", "generates a 3D conformation of the ligand\n");
 	printf("\t%-50s%-50s\n", "--old_types", "uses the old atom types (I-VIII)");
 	printf("\t%-50s%-50s\n", "--new_types", "uses the new atom types (I-XII)");	
-	printf("\t%-50s%-50s\n", "--babel_types", "uses the babel atom types (I-XXVI)\n");
+	printf("\t%-50s%-50s\n", "--sybyl_types", "uses the sybyl atom types (I-XXVI)\n");
 	printf("\t%-50s%-50s\n", "--help", "prints this help menu");
 	printf("\n");
 
@@ -2451,7 +2477,7 @@ void print_command_line(){
 void parse_command_line(int argv, char** argc, char* filename, char* outname,int* verbose, 
 			int* hydro_flex, int* remove_hydro, int* force_gpa, float** force_pcg, 
 			int* atom_index, residue* force_outres, char* extract_string, int* reference, 
-			int* old_types, int* new_types, int* babel_types, int* convert_only, 
+			int* old_types, int* new_types, int* sybyl_types, int* convert_only, 
 			int* process_only, int* gen3D, char* outformat){
 	
 	int i;
@@ -2509,12 +2535,15 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			}
 		}else if(!strcmp(argc[i],"--atom_index")){
 			*atom_index = atoi(argc[++i]);
-		}else if(!strcmp(argc[i],"--old_types")){
+
+		/*else if(!strcmp(argc[i],"--old_types")){
 			*old_types = 1;
 		}else if(!strcmp(argc[i],"--new_types")){
 			*new_types = 1;
-		}else if(!strcmp(argc[i],"--babel_types")){
-			*babel_types = 1;
+		}else if(!strcmp(argc[i],"--sybyl_types")){
+			*sybyl_types = 1;
+		}*/
+
 		}else if(!strcmp(argc[i],"--res_name")){
 			strncpy(force_outres->name,argc[++i],3);
 			force_outres->name[3] = '\0';
@@ -2926,6 +2955,10 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 			MOL2[*n_atoms].aromatic = 0;
 			
 			sscanf(fields[5],"%s",MOL2[*n_atoms].type);
+			for(int j=0; j<6; j++){
+				MOL2[*n_atoms].type[j] = toupper(MOL2[*n_atoms].type[j]);
+			}
+
 			get_Element_From_Hybridation(MOL2[*n_atoms].type,MOL2[*n_atoms].element);
 			MOL2[*n_atoms].nonmetal = is_NonMetal(MOL2[*n_atoms].element);
 
@@ -2998,23 +3031,23 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 
 void get_Element_From_Hybridation(char* string, char* dest){
 
-	if(!strncmp(string,"O.co2",5) || !strncmp(string,"O.2",3) || !strncmp(string,"O.3",3)){
+	if(!strncmp(string,"O.CO2",5) || !strncmp(string,"O.2",3) || !strncmp(string,"O.3",3)){
 		strcpy(dest,"O");
 	}else if(!strncmp(string,"P.3",3)){
 		strcpy(dest,"P");
 	}else if(!strncmp(string,"S.O2",4) || !strncmp(string,"S.2",3) || !strncmp(string,"S.3",3)){
 		strcpy(dest,"S");
-	}else if(!strncmp(string,"N.am",4) || !strncmp(string,"N.ar",4) || !strncmp(string,"N.pl3",5) ||
+	}else if(!strncmp(string,"N.AM",4) || !strncmp(string,"N.AR",4) || !strncmp(string,"N.PL3",5) ||
 		 !strncmp(string,"N.1",3) || !strncmp(string,"N.2",3) || !strncmp(string,"N.3",3) || !strncmp(string,"N.4",3)){
 		strcpy(dest,"N");
-	}else if(!strncmp(string,"C.cat",5) || !strncmp(string,"C.ar",4) || !strncmp(string,"C.1",3) || 
+	}else if(!strncmp(string,"C.CAT",5) || !strncmp(string,"C.AR",4) || !strncmp(string,"C.1",3) || 
 		 !strncmp(string,"C.2",3) || !strncmp(string,"C.3",3)){
 		strcpy(dest,"C");
-	}else if(!strncmp(string,"Br",2)){
+	}else if(!strncmp(string,"BR",2)){
 		strcpy(dest,"Br");
 	}else if(!strncmp(string,"B",1)){
 		strcpy(dest,"B");
-	}else if(!strncmp(string,"Cl",2)){
+	}else if(!strncmp(string,"CL",2)){
 		strcpy(dest,"Cl");
 	}else if(!strncmp(string,"F",1)){
 		strcpy(dest,"F");

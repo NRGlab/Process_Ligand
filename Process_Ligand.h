@@ -182,7 +182,7 @@ int bonds_sp2_Carbon(atom* atomzero);
 void set_AtomTypes(atom* atoms, int n_atoms, int old_types, int new_types, int babel_types, int verbose);
 void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose);
 void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose);
-void set_AtomTypes_BABEL(atom* atomzero, int verbose);
+void set_AtomTypes_SYBYL(atom* atomzero, int verbose);
 void atomtype_by_charge(atom* atomzero);
 int set_Flexible_Bonds(atom* atoms, int n_atoms);
 void set_Cyclic_Bonds(atom* atoms, int n_atoms,int *scc, int n_scc);
