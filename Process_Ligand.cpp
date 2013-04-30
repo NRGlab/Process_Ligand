@@ -45,7 +45,8 @@ int main(int argv, char* argc[]){
 	int old_types=0;
 	int new_types=0;
 	int sybyl_types=1;
-	
+
+	int target=0;        // process the target molecule
 	int atom_index=0;    // starts atom indexing at
 	int reference=0;     // output reference PDB file
 
@@ -54,7 +55,9 @@ int main(int argv, char* argc[]){
 	int gen3D=0;         // generate a 3d conformation of the ligand
 
 	int verbose=0;       // outputing detailed informations
+	char original_filename[MAX_PATH]; // original input file
 	char filename[MAX_PATH]; // PDB ligand file
+	char target_filename[MAX_PATH]; // inp pdb target file
 	char basepath[MAX_PATH]; // base path of filename
 	char outname[MAX_PATH]; // output BASE filenames
 	char icfile[MAX_PATH]; // ligand ic file (.ic)
@@ -103,7 +106,7 @@ int main(int argv, char* argc[]){
 			   &hydro_flex,&remove_hydro,&force_gpa,&force_pcg,
 			   &atom_index,&force_outres,extract_string,
 			   &reference,&old_types,&new_types,&sybyl_types,
-			   &convert_only,&process_only,&gen3D,outformat);
+			   &convert_only,&process_only,&gen3D,outformat,&target);
 			
 	
 	map_atom = (int*)malloc(MAX_MAP*sizeof(int));
@@ -128,6 +131,8 @@ int main(int argv, char* argc[]){
 
 	if(!process_only){
 
+		strcpy(original_filename,filename);
+		
 		if(get_Format(filename,informat)){
 			fprintf(stderr,"ERROR: unknown format for file %s\n", filename);
 			return(2);
@@ -148,13 +153,20 @@ int main(int argv, char* argc[]){
 			printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
 		}
 		
-		if(convert_only) {
+		if(convert_only){
 			printf("Done.\n");
-			return 0; 
+			return 0;
 		}
 	}
 	
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
+	
+	if(target){
+		get_Target_Filename(filename,target_filename);
+		Write_Target(original_filename,target_filename,atoms,n_atoms);
+		return(0);
+	}
+
 	// no atoms matches the extraction list OR no atoms in PDB/MOL2 file.
 	if(atoms == NULL || n_atoms == 0){ printf("ERROR: no atoms found\n"); return 1;}
 
@@ -360,8 +372,7 @@ int main(int argv, char* argc[]){
 
 	}while((build_graph=get_BuildableGraph(graph)) != NULL);
 	
-	
-	set_AtomTypes(atoms, n_atoms, old_types, new_types, sybyl_types, verbose);
+	//set_AtomTypes(atoms, n_atoms, old_types, new_types, sybyl_types, verbose);
 
 	// Base name in output files
 	set_OutBase(filename,outname,basepath,informat);
@@ -472,6 +483,22 @@ int Copy_OriginalMOL2(char* oldfilename, char* error){
 
 	return 0;
 	
+}
+
+int get_Target_Filename(char* filename, char* target_filename){
+	
+	char* pch;
+
+	strcpy(target_filename,filename);
+
+	pch = strstr(target_filename,".mol2.tmp");
+	if(pch != NULL){
+		strcpy(pch,".inp.pdb");
+	}else{
+		return 1;
+	}
+
+	return 0;
 }
 
 int Convert_2_MOL2(char* filename, const char* informat, const char* outformat, char* error,int convert_only,int gen3D){
@@ -2459,6 +2486,7 @@ void print_command_line(){
 	//printf("\t%-50s%-50s\n", "-hf", "includes hydrogen flexible bonds");
 	//printf("\t%-50s%-50s\n", "-wh", "adds hydrogen atoms in output files\n");
 	printf("\t%-50s%-50s\n", "-ref", "outputs the final PDB file from the IC\n");
+	printf("\t%-50s%-50s\n", "-target", "parses a target (append atomtypes in columns[76-77] - PDB format only)\n");
 	printf("\t%-50s%-50s\n", "--atom_index <INT>", "starts atom indexing at");
 	printf("\t%-50s%-50s\n", "--res_name <STR>", "sets the 3-chars code for the ligand");
 	printf("\t%-50s%-50s\n", "--res_chain <CHAR>", "sets the ligand chain");
@@ -2478,7 +2506,7 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			int* hydro_flex, int* remove_hydro, int* force_gpa, float** force_pcg, 
 			int* atom_index, residue* force_outres, char* extract_string, int* reference, 
 			int* old_types, int* new_types, int* sybyl_types, int* convert_only, 
-			int* process_only, int* gen3D, char* outformat){
+			int* process_only, int* gen3D, char* outformat, int* target){
 	
 	int i;
 	
@@ -2508,7 +2536,6 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 		}else if(!strcmp(argc[i],"--help") || !strcmp(argc[i],"-h")){
 			print_command_line();
 			exit(0);
-		}
                 /*else if(!strcmp(argc[i],"-hf")){
                       *hydro_flex = 1;
 		  }
@@ -2516,8 +2543,10 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 		      *remove_hydro = 0;
                   }
 		*/
-		else if(!strcmp(argc[i],"-ref")){
+		}else if(!strcmp(argc[i],"-ref")){
 			*reference = 1;
+		}else if(!strcmp(argc[i],"-target")){
+			*target = 1;
 		}else if(!strcmp(argc[i],"--force_gpa")){
 			*force_gpa = atoi(argc[++i]);
 		}else if(!strcmp(argc[i],"--force_pcg")){
@@ -2962,7 +2991,7 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 			get_Element_From_Hybridation(MOL2[*n_atoms].type,MOL2[*n_atoms].element);
 			MOL2[*n_atoms].nonmetal = is_NonMetal(MOL2[*n_atoms].element);
 
-			MOL2[*n_atoms].atomtype = 0;
+			set_AtomTypes_SYBYL(&MOL2[*n_atoms],0);
 			
 			MOL2[*n_atoms].charge = atof(fields[8]);
 
@@ -3150,6 +3179,65 @@ void get_Flexible_Atoms(atom* atoms,int n_atoms,bond* flex,atom* atomlist[], int
 		}
 	}
 
+}
+
+atom* get_Atom_from_coor(const float* coor, atom* atoms, int n_atoms){
+	
+	for(int i=0; i<n_atoms; i++){
+		int match = 1;
+		for(int j=0; j<3; j++){
+			if(fabs(atoms[i].coor[j]-coor[j]) > 0.0001){
+				match = 0;
+				break;
+			}
+		}
+		if(match){return &atoms[i];}
+	}
+	
+	return NULL;
+}
+
+void Write_Target(char* original_filename, char* target_filename, 
+		  atom* atoms, int n_atoms){
+
+	FILE* infile_ptr = fopen(original_filename,"r");
+	FILE* outfile_ptr = fopen(target_filename,"w");
+
+	char buffer[100];
+	
+	if(infile_ptr == NULL){
+		fprintf(stderr,"could not open file %s for reading\n", original_filename);
+		return;
+	}
+	
+	if(outfile_ptr == NULL){
+		fprintf(stderr,"could not open file %s for writing\n", target_filename);
+		return;
+	}
+	
+	while(fgets(buffer,sizeof(buffer),infile_ptr) != NULL){
+		if(!strncmp(buffer,"ATOM  ",6) || !strncmp(buffer,"HETATM",6)){
+			float coor[3];
+			for(int i=0; i<3; i++){
+				coor[i] = atof(&buffer[30+i*8]);
+			}
+
+			atom* atomz = get_Atom_from_coor(coor,atoms,n_atoms);
+			if(atomz == NULL){
+				fprintf(stderr, "ERROR: No matching atoms for coordinates.\n");
+			}else{
+				//0         1         2         3         4         5         6         7         
+				//01234567890123456789012345678901234567890123456789012345678901234567890123456789
+				//HETATM  709 MG    MG     2       8.551  -2.525  11.085  1.00  8.13          MG
+				buffer[76] = '\0';
+				fprintf(outfile_ptr, "%s%2d\n", buffer, atomz->atomtype);
+			}
+		}else{
+			fprintf(outfile_ptr, "%s", buffer);
+		}
+	}
+
+	fclose(outfile_ptr);
 }
 
 void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hydro){

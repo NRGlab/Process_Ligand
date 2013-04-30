@@ -142,7 +142,7 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			int* hydro_flex, int* remove_hydro,int* force_gpa, float** force_pcg,
 			int* atom_index, residue* res, char* extract, int* reference, 
 			int* old_types, int* new_types, int* babel_types, int* convert_only, 
-			int* process_only,int* gen3D, char* outformat);
+			int* process_only,int* gen3D, char* outformat, int* target);
 
 void set_OutBase(char* filename,char* outname, char* basepath, char* informat);
 residue* get_Extract_List(char* extract_string,int* n_extract, residue* res,char* informat);
@@ -156,6 +156,8 @@ int Copy_OriginalMOL2(char* oldfilename, char* error);
 int Convert_2_MOL2(char* filename, const char* informat, const char* outformat, char* error,int convert_only,int gen3D);
 int read_Type(char* type);
 int get_Format(char* filename, char* informat);
+int get_Target_Filename(char* filename, char* target_filename);
+atom* get_Atom_from_coor(const float* coor, atom* atoms, int n_atoms);
 
 int in_stack(atom* atomw, int* st, int n_st);
 void strongconnect(atom* atomv, atom* atomf, atom* atoms, int n_atoms,int* st, int* n_st,
@@ -257,6 +259,7 @@ void Print_BuildList(atom* atomz);
 atom* get_NonBL_Connection(atom* atomz, atom* build);
 void Translate(atom* pcg, float* force_pcg);
 
+void Write_Target(char* original_filename, char* target_filename, atom* atoms, int n_atoms);
 void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hydro);
 void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remove_hydro, residue* res, residue* force_outres,atom* gpa, subgraph* graph);
 void Write_REF(char* filename, atom* atoms, int n_atoms, int remove_hydro, residue* res, residue* force_outres);
