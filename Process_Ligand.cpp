@@ -55,6 +55,7 @@ int main(int argv, char* argc[]){
 	int gen3D=0;         // generate a 3d conformation of the ligand
 
 	int verbose=0;       // outputing detailed informations
+	
 	char original_filename[MAX_PATH]; // original input file
 	char filename[MAX_PATH]; // PDB ligand file
 	char target_filename[MAX_PATH]; // inp pdb target file
@@ -65,8 +66,8 @@ int main(int argv, char* argc[]){
 	char reffile[MAX_PATH]; // reference PDB file
 	char error[MAX_PATH];   // error messages
 	
-	residue outres;	
-	residue force_outres;	
+	residue outres;
+	residue force_outres;
 
 	char informat[6];
 	char outformat[6] = "mol2";
@@ -2246,7 +2247,6 @@ void set_AtomTypes_SYBYL(atom* atomzero, int verbose){
 		// dummy atom type
 		atomzero->atomtype = 39;
 	}
-
 }
 
 void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
@@ -3060,30 +3060,55 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 
 void get_Element_From_Hybridation(char* string, char* dest){
 
-	if(!strncmp(string,"O.CO2",5) || !strncmp(string,"O.2",3) || !strncmp(string,"O.3",3)){
+	if(!strncmp(string,"O.CO2",5)  || !strncmp(string,"O.AR",4) || !strncmp(string,"O.2",3) || !strncmp(string,"O.3",3)){
 		strcpy(dest,"O");
 	}else if(!strncmp(string,"P.3",3)){
 		strcpy(dest,"P");
-	}else if(!strncmp(string,"S.O2",4) || !strncmp(string,"S.2",3) || !strncmp(string,"S.3",3)){
+	}else if(!strncmp(string,"S.O2",4) || !strncmp(string,"S.2",3) || !strncmp(string,"S.3",3) ||
+		 !strncmp(string,"S.O",3)  || !strncmp(string,"S.AR",4)){
 		strcpy(dest,"S");
 	}else if(!strncmp(string,"N.AM",4) || !strncmp(string,"N.AR",4) || !strncmp(string,"N.PL3",5) ||
 		 !strncmp(string,"N.1",3) || !strncmp(string,"N.2",3) || !strncmp(string,"N.3",3) || !strncmp(string,"N.4",3)){
 		strcpy(dest,"N");
-	}else if(!strncmp(string,"C.CAT",5) || !strncmp(string,"C.AR",4) || !strncmp(string,"C.1",3) || 
+	}else if(!strncmp(string,"C.CAT",5) || !strncmp(string,"C.AR",4) || !strncmp(string,"C.1",3) ||  
 		 !strncmp(string,"C.2",3) || !strncmp(string,"C.3",3)){
 		strcpy(dest,"C");
-	}else if(!strncmp(string,"BR",2)){
-		strcpy(dest,"Br");
-	}else if(!strncmp(string,"B",1)){
-		strcpy(dest,"B");
 	}else if(!strncmp(string,"CL",2)){
 		strcpy(dest,"Cl");
+	}else if(!strncmp(string,"BR",2)){
+		strcpy(dest,"Br");
+	}else if(!strncmp(string,"SE",2)){
+		strcpy(dest,"Se");
+	}else if(!strncmp(string,"MG",2)){
+		strcpy(dest,"Mg");
+	}else if(!strncmp(string,"SR",2)){
+		strcpy(dest,"Sr");
+	}else if(!strncmp(string,"CU",2)){
+		strcpy(dest,"Cu");
+	}else if(!strncmp(string,"MN",2)){
+		strcpy(dest,"Mn");
+	}else if(!strncmp(string,"MG",2)){
+		strcpy(dest,"Mg");
+	}else if(!strncmp(string,"HG",2)){
+		strcpy(dest,"Hg");
+	}else if(!strncmp(string,"CD",2)){
+		strcpy(dest,"Cd");
+	}else if(!strncmp(string,"NI",2)){
+		strcpy(dest,"Ni");
+	}else if(!strncmp(string,"ZN",2)){
+		strcpy(dest,"Zn");
+	}else if(!strncmp(string,"CA",2)){
+		strcpy(dest,"Ca");
+	}else if(!strncmp(string,"FE",2)){
+		strcpy(dest,"Fe");
 	}else if(!strncmp(string,"F",1)){
 		strcpy(dest,"F");
 	}else if(!strncmp(string,"I",1)){
 		strcpy(dest,"I");
 	}else if(!strncmp(string,"H",1)){
 		strcpy(dest,"H");
+	}else if(!strncmp(string,"CO.OH",5)){
+		strcpy(dest,"Co");
 	}else{
 		printf("WARNING: unknown element for type %s\n", string);
 		strcpy(dest,"  ");
