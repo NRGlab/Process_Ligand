@@ -49,11 +49,12 @@ typedef struct struct_subgraph subgraph;
 
 struct struct_subgraph {
 	int size;         // size of graph (fragment)
+	int remain;       // number of nodes remaining to build
 	int recsize;      // recursive size
 
 	int id;           // unique id.
 	bool anchor;      // can serve as anchor
-	bool done;        // tested anchorage
+	int state;        // state: 0 undone 1 wait 2 done
 
 	atom* at;         // atom that connects to root
 	subgraph* root;   // from which the fragments branches from
@@ -225,6 +226,7 @@ int is_Aromatic_Carboxylate(bond* conect);
 int is_Terminal(bond* conect);
 
 void Print_subGraph(subgraph* graph, atom* atoms, int n_atoms);
+int validate_Graph(subgraph* graph);
 subgraph* subGraph_Molecule(atom* atoms, int n_atoms);
 atom* get_NextGraphAtom(atom* atoms, int n_atoms);
 subgraph* get_LargestGraph(subgraph* graph);
@@ -253,6 +255,8 @@ atom* get_GPA_from_AngleGraph(subgraph* anchor_graph, atom* atoms, int n_atoms);
 atom* get_Free_gpa(atom* atoms, int n_atoms);
 atom* get_Buildable(atom* atoms, int n_atoms,subgraph* graph, atom* gpa);
 atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence);
+int reset_BuildableGraph(subgraph* graph);
+int validate_Graphs(subgraph* graph);
 int is_Built(atom* atomb);
 void Reset_Buildable(atom* atoms, int n_atoms);
 void Print_BuildList(atom* atomz);

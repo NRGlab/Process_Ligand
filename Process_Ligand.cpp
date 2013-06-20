@@ -124,7 +124,7 @@ int main(int argv, char* argc[]){
 
 		if(ori_pcg == NULL){
 			printf("ERROR: could not allocate memory for ori_pcg\n");
-			exit(2);
+			return(2);
 		}
 
 		memset(ori_pcg,0.0f,3*sizeof(float));
@@ -243,7 +243,6 @@ int main(int argv, char* argc[]){
 	reset_Graph(graph);
 	set_Recursive_Size(graph);
 	
-
 	// GPA processing
 	gpa = get_GPA_from_AnchorGraph(graph, anchor_graph, atoms, n_atoms, gpa, &gpa2, &gpa3);
 
@@ -273,12 +272,12 @@ int main(int argv, char* argc[]){
 					break;
 				}
 			}
-
+			
 			gpa2->build_state = 1;
 			gpa2->buildlist[0] = gpa;
 			gpa2->buildlist[1] = &pcg2;
 			gpa2->buildlist[2] = &pcg3;
-
+			
 			sequence->next_build = gpa2;
 			sequence = sequence->next_build;
 			
@@ -294,7 +293,7 @@ int main(int argv, char* argc[]){
 						sequence->buildlist[0] = gpa2;
 						sequence->buildlist[1] = gpa;
 						sequence->buildlist[2] = &pcg3;
-
+						
 						if(j == 0){ gpa3 = sequence; }
 					}
 				}
@@ -331,12 +330,12 @@ int main(int argv, char* argc[]){
 
 			sequence->next_build = gpa2;
 			sequence = sequence->next_build;
-	
+			
 			gpa3->build_state = 1;
 			gpa3->buildlist[0] = gpa2;
 			gpa3->buildlist[1] = gpa;
 			gpa3->buildlist[2] = &pcg3;
-
+			
 			sequence->next_build = gpa3;
 			sequence = sequence->next_build;
 			
@@ -344,7 +343,7 @@ int main(int argv, char* argc[]){
 				
 	}
 
-
+	
 	gpa->gpa = 1;
 	printf("reference gpa atom gpa is %d\n", gpa->number);
 	
@@ -352,11 +351,15 @@ int main(int argv, char* argc[]){
 	save_Shortest_to_GPA(atoms,n_atoms);
 	//Print_Paths(atoms,n_atoms);
 	free_Paths(&atoms,n_atoms);
-
+	
 	// build atoms sequence
 	reset_Graph(graph);
-
+	
 	build_graph = anchor_graph;
+	
+	gpa->graph->remain--;
+	gpa2->graph->remain--;
+	gpa3->graph->remain--;
 	
 	do{
 		//printf("build all atoms in graph[%d]\n", build_graph->id);
@@ -364,17 +367,26 @@ int main(int argv, char* argc[]){
 		while((build=get_Buildable(atoms,n_atoms,build_graph,gpa)) != NULL)
 		{
 			get_Shortest_Path(build,atoms,n_atoms);
-			//Print_Paths(atoms,n_atoms);		
+			//Print_Paths(atoms,n_atoms);
 			sequence=BuildList(atoms,n_atoms,build,sequence);
 			free_Paths(&atoms,n_atoms);
 		}
-		
-		build_graph->done = true;
+				
+		if(!build_graph->remain){
+			build_graph->state = 2; // done for good
+		}else{
+			build_graph->state = 1; // redo later
+		}
 
 	}while((build_graph=get_BuildableGraph(graph)) != NULL);
 	
+	if(validate_Graphs(graph)){
+		printf("ERROR: not all subgraphs could be built.\n");
+		return(2);
+	}
+	
 	//set_AtomTypes(atoms, n_atoms, old_types, new_types, sybyl_types, verbose);
-
+	
 	// Base name in output files
 	set_OutBase(filename,outname,basepath,informat);
 	printf("will output to prefix '%s'\n", outname);
@@ -390,7 +402,6 @@ int main(int argv, char* argc[]){
 	strcat(inpfile,".inp");
 	Write_INP(inpfile, icfile, atoms, n_atoms, remove_hydro, &outres, &force_outres, gpa, graph);
 	
-
 	// write reference PDB file
 	if(reference){
 		strcpy(reffile,outname);
@@ -762,7 +773,7 @@ subgraph* subGraph_Molecule(atom* atoms, int n_atoms){
 		newgraph->at = NULL;
 		newgraph->root = NULL;
 		newgraph->anchor = true;
-		newgraph->done = false;
+		newgraph->state = 0;
 
 		if(graph == NULL){
 			newgraph->id = 1;
@@ -786,6 +797,8 @@ subgraph* subGraph_Molecule(atom* atoms, int n_atoms){
 
 		free_Paths(&atoms,n_atoms);
 
+		newgraph->remain = newgraph->size;
+		
 		// graphs linked list
 		newgraph->prev = graph;
 		graph = newgraph;
@@ -863,7 +876,7 @@ subgraph* get_NextUnconnectedGraph(subgraph* graph){
 
 	while(graph != NULL){
 		if(graph->root == NULL &&
-		   !graph->done){
+		   !graph->state){
 			return graph;
 		}
 		
@@ -910,7 +923,7 @@ void set_Recursive_Size(subgraph* graph){
 
 	while((child_graph=get_ChildestGraph(graph,&recsize)) != NULL){
 		child_graph->recsize = recsize + child_graph->size;
-		child_graph->done = true;		
+		child_graph->state = 2;		
 	}
 
 }
@@ -923,7 +936,7 @@ subgraph* get_ChildestGraph(subgraph* graph, int* recsize){
 	// retrieve the graph none graph roots to and not already flagged as done
 	while(graph1 != NULL){
 
-		if(graph1->done){ graph1 = graph1->prev; continue; }
+		if(graph1->state == 2){ graph1 = graph1->prev; continue; }
 		
 		root = NULL;
 		*recsize = 0;
@@ -939,7 +952,7 @@ subgraph* get_ChildestGraph(subgraph* graph, int* recsize){
 				       graph2->done?"DONE":"NOT DONE");
 				*/
 
-				if(!graph2->done){ root = graph1; }
+				if(!graph2->state){ root = graph1; }
 			}
 			
 			graph2 = graph2->prev;
@@ -969,7 +982,7 @@ void connect_Graph(subgraph* graph, subgraph* anchor_graph, atom* atoms, int n_a
 			//printf("next graph to be built is graph[%d]\n", build_graph->id);
 			
 			anchor_Graph(build_graph, anchor_graph, atoms, n_atoms);
-			build_graph->done = true;
+			build_graph->state = 2;
 		}
 
 		anchor_graph->anchor = false;
@@ -982,7 +995,7 @@ void connect_Graph(subgraph* graph, subgraph* anchor_graph, atom* atoms, int n_a
 void reset_Graph(subgraph* graph){
 
 	while(graph != NULL){
-		graph->done = false;
+		graph->state = 0;
 		graph = graph->prev;
 	}	
 
@@ -1031,17 +1044,63 @@ void Reset_Buildable(atom* atoms, int n_atoms){
 	
 }
 
+int validate_Graphs(subgraph* graph)
+{
+	while(graph != NULL){
+		if(graph->state != 2){
+			return(1);
+		}
+		graph = graph->prev;
+	}
+	return(0);
+}
+
+int reset_BuildableGraph(subgraph* graph)
+{
+	static int i = -1;
+	int j = 0;
+	
+	// resets wait graphs to undone
+	while(graph != NULL){
+		if(graph->state == 1){
+			graph->state = 0;
+			j++;
+		}
+		graph = graph->prev;
+	}
+
+	if(i != -1 && i == j)
+		return(1);
+
+	i = j;
+	return 0;
+}
+
 subgraph* get_BuildableGraph(subgraph* graph){
 
+	subgraph* graph_start = graph;
+	
 	while(graph != NULL){
-		if(!graph->done && 
-		   graph->root->done){
+		if(!graph->state){
+			//graph->root->state == 2){
 			return graph;
 		}
-		
 		graph = graph->prev;
 	}
 	
+	// no undone graphs, are there any wait graphs
+	if(reset_BuildableGraph(graph_start))
+		return NULL;
+	
+	graph = graph_start;
+	while(graph != NULL){
+		if(!graph->state){
+			//graph->root->state == 2){
+			return graph;
+		}
+		graph = graph->prev;
+	}
+
 	return NULL;
 }
 
@@ -1102,14 +1161,12 @@ atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence){
 	for(i=0; i<n_atoms; i++){
 		
 		if(build->build_state == 1){break;}
-
+		
 		if(atoms[i].sp_paths_n == 0 || is_Hydrogen(&atoms[i])){continue;}
-
 		
 		//printf("----------------\n");
 		//printf("from atom %d\n", atoms[i].number);
 		
-
 		n=atoms[i].sp_paths_n >=4 ? 4 : atoms[i].sp_paths_n;
 		
 		// loop through all paths of atom[i] to atom 'build'
@@ -1166,12 +1223,13 @@ atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence){
 	}		
 
 	if(build->build_state == 1){
-		
 		sequence->next_build = build;
 		sequence = sequence->next_build;
-
+		
 		Reset_Buildable(atoms,n_atoms);
 		//Print_BuildList(build);
+		
+		build->graph->remain--;
 	}else{
 		//printf("%d FLAGGED AS FAILED\n",build->number);
 		build->build_state = -1;
@@ -1187,7 +1245,7 @@ atom* get_NonBL_Connection(atom* atomz, atom* build){
 
 	for(i=1; i<=atomz->n_bonds; i++){
 		if(atomz->conect[i].to == build || 
-		   is_Hydrogen(atomz->conect[i].to)) 
+		   is_Hydrogen(atomz->conect[i].to))
 		{ 
 			continue; 
 		}
@@ -3296,13 +3354,14 @@ void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hy
 		gpa->buildlist[1]->coor[0],
 		gpa->buildlist[1]->coor[1],
 		gpa->buildlist[1]->coor[2]);
-
+	
 	fclose(infile_ptr);
 	
 }
 
 
-void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remove_hydro, residue* outres, residue* force_outres, atom* gpa, subgraph* graph){
+void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remove_hydro, 
+	       residue* outres, residue* force_outres, atom* gpa, subgraph* graph){
 
 	int i,j;
 	FILE* infile_ptr;
