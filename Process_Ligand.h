@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cctype>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <math.h>
 #include <vector>
