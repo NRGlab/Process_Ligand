@@ -7,7 +7,7 @@
 //#define NEUTRAL_THRESHOLD           0.1250
 
 using namespace std;
-using namespace OpenBabel;
+//using namespace OpenBabel;
 
 int main(int argv, char* argc[])
 {
@@ -132,7 +132,8 @@ int main(int argv, char* argc[])
 		memset(ori_pcg,0.0f,3*sizeof(float));
 	}
 
-	if(!process_only){
+	if(!process_only)
+    {
 
 		strcpy(original_filename,filename);
 
@@ -148,18 +149,30 @@ int main(int argv, char* argc[])
 			printf("Output file format is '%s'\n", outformat);
 		}
 		*/
+        
+//        cout << "informat is :" << informat << endl;
+		if(strcmp(informat, "mol2")) // if format is different from 'mol2'
+        {
+            if( !(n=Convert_2_MOL2(filename,informat,outformat,error,convert_only,gen3D)) )
+            {
+                fprintf(stderr,"%s",error);
+                return(2);
+            }
+            else
+            {
+                printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
+            }
 
-		if(!(n=Convert_2_MOL2(filename,informat,outformat,error,convert_only,gen3D))){
-			fprintf(stderr,"%s",error);
-			return(2);
-		}else{
-			printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
-		}
-
-		if(convert_only){
-			printf("Done.\n");
-			return 0;
-		}
+            if(convert_only)
+            {
+                printf("Done.\n");
+                return 0;
+            }
+        }
+        else //
+        {
+            cout << "No conversion needed for the file to the mol2 format." << endl;
+        }
 	}
 
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
@@ -798,7 +811,7 @@ subgraph* subGraph_Molecule(atom* atoms, int n_atoms){
 			   atoms[i].graph == NULL &&
 			   /*!is_Hydrogen(&atoms[i]) &&*/
 			   is_RigidPath(atoms[i].sp_paths[0],atoms[i].sp_paths_n,&atoms[i])){
-				printf("ADDED %d TO NODE LIST\n", atoms[i].number);
+//				printf("ADDED %d TO NODE LIST\n", atoms[i].number);
 				atoms[i].graph = newgraph;
 				newgraph->size++;
 			}
@@ -2618,9 +2631,11 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 		}
         else if(!strcmp(argc[i],"-hf")){
               *hydro_flex = 1;
+            *remove_hydro = 0;
 	  	}
 	  	else if(!strcmp(argc[i],"-wh")){
-	      *remove_hydro = 0;
+            *remove_hydro = 0;
+            *hydro_flex = 1;
 		}else if(!strcmp(argc[i],"-ref")){
 			*reference = 1;
 		}else if(!strcmp(argc[i],"-target")){
@@ -2744,7 +2759,7 @@ int memAlloc_Paths(atom** atoms, int n_atoms){
 				return 0;
 			}
 			//printf("[%2d]: allocated %p\n", j, (*atoms)[i].sp_paths[j]);
-			memset((*atoms)[i].sp_paths[j],NULL,n_atoms*sizeof(atom*));
+			memset((*atoms)[i].sp_paths[j],0,n_atoms*sizeof(atom*));
 		}
 	}
 
