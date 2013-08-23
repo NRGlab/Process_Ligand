@@ -3093,8 +3093,8 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 			get_Element_From_Hybridation(MOL2[*n_atoms].type,MOL2[*n_atoms].element);
 			MOL2[*n_atoms].nonmetal = is_NonMetal(MOL2[*n_atoms].element);
 
-			set_AtomTypes_SYBYL(&MOL2[*n_atoms],0);
-
+			//set_AtomTypes_SYBYL(&MOL2[*n_atoms],0);
+			
 			MOL2[*n_atoms].charge = atof(fields[8]);
 
 			map_atom[MOL2[*n_atoms].number] = *n_atoms;
