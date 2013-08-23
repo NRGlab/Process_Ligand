@@ -45,7 +45,7 @@ int main(int argv, char* argc[]){
 	int old_types=0;
 	int new_types=0;
 	int sybyl_types=1;
-
+	
 	int target=0;        // process the target molecule
 	int atom_index=0;    // starts atom indexing at
 	int reference=0;     // output reference PDB file
@@ -161,6 +161,7 @@ int main(int argv, char* argc[]){
 	}
 	
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
+	set_AtomTypes(atoms, n_atoms, old_types, new_types, sybyl_types, verbose);
 	
 	if(target){
 		get_Target_Filename(filename,target_filename);
@@ -384,9 +385,7 @@ int main(int argv, char* argc[]){
 		printf("ERROR: not all subgraphs could be built.\n");
 		return(2);
 	}
-	
-	//set_AtomTypes(atoms, n_atoms, old_types, new_types, sybyl_types, verbose);
-	
+		
 	// Base name in output files
 	set_OutBase(filename,outname,basepath,informat);
 	printf("will output to prefix '%s'\n", outname);
@@ -3059,7 +3058,7 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 			get_Element_From_Hybridation(MOL2[*n_atoms].type,MOL2[*n_atoms].element);
 			MOL2[*n_atoms].nonmetal = is_NonMetal(MOL2[*n_atoms].element);
 
-			set_AtomTypes_SYBYL(&MOL2[*n_atoms],0);
+			//set_AtomTypes_SYBYL(&MOL2[*n_atoms],0);
 			
 			MOL2[*n_atoms].charge = atof(fields[8]);
 
