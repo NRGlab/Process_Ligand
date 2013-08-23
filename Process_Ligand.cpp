@@ -2252,58 +2252,68 @@ void set_AtomTypes_SYBYL(atom* atomzero, int verbose){
 	}else if(!strncmp(atomzero->type,"O.2",3)){
 		atomzero->atomtype = 13;
 	}else if(!strncmp(atomzero->type,"O.3",3)){
-		atomzero->atomtype = 14;
+		// important distinction to make
+		if(count_Hydrogens(atomzero) == 1){
+			atomzero->atomtype = 14; // alcohol (O.AL)
+		}else{
+			atomzero->atomtype = 15; // ether (O.ET)
+		}
 	}else if(!strncmp(atomzero->type,"O.CO2",5)){
-		atomzero->atomtype = 15;
-	}else if(!strncmp(atomzero->type,"O.AR",4)){
 		atomzero->atomtype = 16;
-	}else if(!strncmp(atomzero->type,"S.2",3)){
+	}else if(!strncmp(atomzero->type,"O.AR",4)){
 		atomzero->atomtype = 17;
-	}else if(!strncmp(atomzero->type,"S.3",3)){
+	}else if(!strncmp(atomzero->type,"S.2",3)){
 		atomzero->atomtype = 18;
+	}else if(!strncmp(atomzero->type,"S.3",3)){
+		// important distinction to make (alcohol vs ether)
+		if(count_Hydrogens(atomzero) == 1){
+			atomzero->atomtype = 19; // alcohol
+		}else{
+			atomzero->atomtype = 20; // ether
+		}
 	}else if(!strncmp(atomzero->type,"S.O2",4)){
-		atomzero->atomtype = 20;
-	}else if(!strncmp(atomzero->type,"S.O",3)){
-		atomzero->atomtype = 19;
-	}else if(!strncmp(atomzero->type,"S.AR",4)){
-		atomzero->atomtype = 21;
-	}else if(!strncmp(atomzero->type,"P.3",3)){
 		atomzero->atomtype = 22;
-	}else if(!strncmp(atomzero->type,"CL",2)){
-		atomzero->atomtype = 24;
-	}else if(!strncmp(atomzero->type,"BR",2)){
-		atomzero->atomtype = 25;
-	}else if(!strncmp(atomzero->type,"SE",2)){
-		atomzero->atomtype = 27;
-	}else if(!strncmp(atomzero->type,"MG",2)){
-		atomzero->atomtype = 28;
-	}else if(!strncmp(atomzero->type,"SR",2)){
-		atomzero->atomtype = 29;
-	}else if(!strncmp(atomzero->type,"CU",2)){
-		atomzero->atomtype = 30;
-	}else if(!strncmp(atomzero->type,"MN",2)){
-		atomzero->atomtype = 31;
-	}else if(!strncmp(atomzero->type,"HG",2)){
-		atomzero->atomtype = 32;
-	}else if(!strncmp(atomzero->type,"CD",2)){
-		atomzero->atomtype = 33;
-	}else if(!strncmp(atomzero->type,"NI",2)){
-		atomzero->atomtype = 34;
-	}else if(!strncmp(atomzero->type,"ZN",2)){
-		atomzero->atomtype = 35;
-	}else if(!strncmp(atomzero->type,"CA",2)){
-		atomzero->atomtype = 36;
-	}else if(!strncmp(atomzero->type,"FE",2)){
-		atomzero->atomtype = 37;
-	}else if(!strncmp(atomzero->type,"F",1)){
+	}else if(!strncmp(atomzero->type,"S.O",3)){
+		atomzero->atomtype = 21;
+	}else if(!strncmp(atomzero->type,"S.AR",4)){
 		atomzero->atomtype = 23;
-	}else if(!strncmp(atomzero->type,"I",1)){
+	}else if(!strncmp(atomzero->type,"P.3",3)){
+		atomzero->atomtype = 24;
+	}else if(!strncmp(atomzero->type,"CL",2)){
 		atomzero->atomtype = 26;
-	}else if(!strncmp(atomzero->type,"CO.OH",5)){
+	}else if(!strncmp(atomzero->type,"BR",2)){
+		atomzero->atomtype = 27;
+	}else if(!strncmp(atomzero->type,"SE",2)){
+		atomzero->atomtype = 29;
+	}else if(!strncmp(atomzero->type,"MG",2)){
+		atomzero->atomtype = 30;
+	}else if(!strncmp(atomzero->type,"SR",2)){
+		atomzero->atomtype = 31;
+	}else if(!strncmp(atomzero->type,"CU",2)){
+		atomzero->atomtype = 32;
+	}else if(!strncmp(atomzero->type,"MN",2)){
+		atomzero->atomtype = 33;
+	}else if(!strncmp(atomzero->type,"HG",2)){
+		atomzero->atomtype = 34;
+	}else if(!strncmp(atomzero->type,"CD",2)){
+		atomzero->atomtype = 35;
+	}else if(!strncmp(atomzero->type,"NI",2)){
+		atomzero->atomtype = 36;
+	}else if(!strncmp(atomzero->type,"ZN",2)){
+		atomzero->atomtype = 37;
+	}else if(!strncmp(atomzero->type,"CA",2)){
 		atomzero->atomtype = 38;
+	}else if(!strncmp(atomzero->type,"FE",2)){
+		atomzero->atomtype = 39;
+	}else if(!strncmp(atomzero->type,"F",1)){
+		atomzero->atomtype = 25;
+	}else if(!strncmp(atomzero->type,"I",1)){
+		atomzero->atomtype = 28;
+	}else if(!strncmp(atomzero->type,"CO.OH",5)){
+		atomzero->atomtype = 40;
 	}else{
 		// dummy atom type
-		atomzero->atomtype = 39;
+		atomzero->atomtype = 41;
 	}
 }
 
