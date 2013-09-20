@@ -3474,7 +3474,7 @@ void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remov
 
 
 	//printf("number of unique flexible bonds: %d\n", n_flex);
-
+	int n_flex_counter = 1;
 	for(i=0; i<n_flex; i++){
 		nlist=0;
 		get_Flexible_Atoms(atoms,n_atoms,flex[i],atomlist,sense,&nlist,remove_hydro);
@@ -3491,7 +3491,7 @@ void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remov
 			}
 
 			if(validated){
-				fprintf(infile_ptr,"FLEDIH%3d ", i + 1);
+				fprintf(infile_ptr,"FLEDIH%3d ", n_flex_counter++);
 				for(j=0; j<nlist; j++){ fprintf(infile_ptr,"%5d", atomlist[j]->index); }
 				fprintf(infile_ptr,"\n");
 			}else{
