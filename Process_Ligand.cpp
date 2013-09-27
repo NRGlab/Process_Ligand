@@ -141,7 +141,7 @@ int main(int argv, char* argc[])
 			fprintf(stderr,"ERROR: unknown format for file %s\n", filename);
 			return(2);
 		}
-
+		
 		printf("File format is '%s'\n", informat);
 
 		/*
@@ -3014,6 +3014,10 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 			atom_flag = 0;
 			bond_flag = 1;
 			continue;
+		}else if(!strncmp("@<TRIPOS>",buffer,9)){
+			atom_flag = 0;
+			bond_flag = 0;
+			continue;			
 		}
 
 		if(atom_flag){
