@@ -133,7 +133,7 @@ int main(int argv, char* argc[])
 	}
 
 	if(!process_only)
-    {
+	{
 
 		strcpy(original_filename,filename);
 
@@ -145,34 +145,34 @@ int main(int argv, char* argc[])
 		printf("File format is '%s'\n", informat);
 
 		/*
-		if(convert_only){
-			printf("Output file format is '%s'\n", outformat);
-		}
+		  if(convert_only){
+		  printf("Output file format is '%s'\n", outformat);
+		  }
 		*/
         
 //        cout << "informat is :" << informat << endl;
 		if(strcmp(informat, "mol2")) // if format is different from 'mol2'
-        {
-            if( !(n=Convert_2_MOL2(filename,informat,outformat,error,convert_only,gen3D)) )
-            {
-                fprintf(stderr,"%s",error);
-                return(2);
-            }
-            else
-            {
-                printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
-            }
+		{
+			if( !(n=Convert_2_MOL2(filename,informat,outformat,error,convert_only,gen3D)) )
+			{
+				fprintf(stderr,"%s",error);
+				return(2);
+			}
+			else
+			{
+				printf("OpenBabel :: converted %d molecule%s\n",n, n>1?"s":"");
+			}
 
-            if(convert_only)
-            {
-                printf("Done.\n");
-                return 0;
-            }
-        }
-        else //
-        {
-            cout << "No conversion needed for the file to the mol2 format." << endl;
-        }
+			if(convert_only)
+			{
+				printf("Done.\n");
+				return 0;
+			}
+		}
+		else //
+		{
+			cout << "No conversion needed for the file to the mol2 format." << endl;
+		}
 	}
 
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
@@ -189,7 +189,7 @@ int main(int argv, char* argc[])
 
 	printf("read %d atoms\n", n_atoms);
 	get_Ligand_Center_Geometry(atoms,n_atoms,lig_pcg);
-
+	
 
 	if(force_pcg != NULL){
 		// Adds up the user-defined PCG
@@ -235,11 +235,11 @@ int main(int argv, char* argc[])
 	}else{
 		printf("molecule is acyclic\n");
 	}
-
+	
 	// set bonds as flexible that meet criteria
 	printf("Found %d flexible bond(s)\n", set_Flexible_Bonds(atoms,n_atoms));
 
-
+	
 	// divide molecule into sub graphs
 	graph = subGraph_Molecule(atoms,n_atoms);
 	//Print_subGraph(graph,atoms,n_atoms);
@@ -266,15 +266,15 @@ int main(int argv, char* argc[])
 		printf("ERROR: could not assign gpa atoms.\n");
 		return 3;
 	}
-    else
-    {
+	else
+	{
 
 		if((n_branch=is_AngleGraph(anchor_graph, atoms, n_atoms)))
-        {
+		{
 			printf("gpa is in angle graph: will validate gpa atom\n");
 
 			if((gpa->n_bonds - count_Hydrogens(gpa)) != 1)
-            {
+			{
 				gpa = get_GPA_from_AngleGraph(anchor_graph, atoms, n_atoms);
 			}
 
@@ -287,9 +287,9 @@ int main(int argv, char* argc[])
 			sequence = gpa;
 
 			for(i=1; i<=gpa->n_bonds; i++)
-            {
+			{
 				if(!is_Hydrogen(gpa->conect[i].to))
-                {
+				{
 					gpa2 = gpa->conect[i].to;
 					break;
 				}
@@ -382,29 +382,13 @@ int main(int argv, char* argc[])
 	gpa->graph->remain--;
 	gpa2->graph->remain--;
 	gpa3->graph->remain--;
-
-	do{
-		//printf("build all atoms in graph[%d]\n", build_graph->id);
-
-		while((build=get_Buildable(atoms,n_atoms,build_graph,gpa)) != NULL)
-		{
-			get_Shortest_Path(build,atoms,n_atoms);
-			//Print_Paths(atoms,n_atoms);
-			sequence=BuildList(atoms,n_atoms,build,sequence);
-			free_Paths(&atoms,n_atoms);
-		}
-
-		if(!build_graph->remain){
-			build_graph->state = 2; // done for good
-		}else{
-			build_graph->state = 1; // redo later
-		}
-
-	}while((build_graph=get_BuildableGraph(graph)) != NULL);
-
-	if(validate_Graphs(graph)){
-		printf("ERROR: not all subgraphs could be built.\n");
-		return(2);
+	
+	while((build=get_Buildable(atoms,n_atoms,build_graph,gpa)) != NULL)
+	{
+		get_Shortest_Path(build,atoms,n_atoms);
+		//Print_Paths(atoms,n_atoms);
+		sequence=BuildList(atoms,n_atoms,build,sequence);
+		free_Paths(&atoms,n_atoms);
 	}
 		
 	// Base name in output files
@@ -555,13 +539,13 @@ int Convert_2_MOL2(char* filename, const char* informat, const char* outformat, 
 	strcpy(pch,suffix);
 
 	/*
-	strcpy(suffix,"_tmp.");
-	if(convert_only){
-		strcat(suffix,outformat);
-	}else{
-		strcat(suffix,"mol2");
-	}
-	strcpy(pch,suffix);
+	  strcpy(suffix,"_tmp.");
+	  if(convert_only){
+	  strcat(suffix,outformat);
+	  }else{
+	  strcat(suffix,"mol2");
+	  }
+	  strcpy(pch,suffix);
 	*/
 
 	//cout << "will open " << outfilename << " for output" << endl;
@@ -807,7 +791,7 @@ subgraph* subGraph_Molecule(atom* atoms, int n_atoms){
 		get_Shortest_Path(root,atoms,n_atoms);
 
 		for(int i=0; i<n_atoms; i++)
-        {
+		{
 			if(root != &atoms[i] &&
 			   atoms[i].graph == NULL &&
 			   /*!is_Hydrogen(&atoms[i]) &&*/
@@ -972,8 +956,8 @@ subgraph* get_ChildestGraph(subgraph* graph, int* recsize){
 				(*recsize) += graph2->recsize;
 
 				/*
-				printf("graph[%d] roots graph[%d] (%s)\n", graph1->id, graph2->id,
-				       graph2->done?"DONE":"NOT DONE");
+				  printf("graph[%d] roots graph[%d] (%s)\n", graph1->id, graph2->id,
+				  graph2->done?"DONE":"NOT DONE");
 				*/
 
 				if(!graph2->state){ root = graph1; }
@@ -1036,14 +1020,14 @@ int anchor_Graph(subgraph* build_graph, subgraph* anchor_graph, atom* atoms, int
 			for(int j=0; j<n_atoms; j++){
 				if(atoms[j].graph == anchor_graph){
 					/*
-					printf("check connection with atom[%d] from graph[%d]\n",
-					       atoms[j].number, atoms[j].graph->id);
+					  printf("check connection with atom[%d] from graph[%d]\n",
+					  atoms[j].number, atoms[j].graph->id);
 					*/
 
 					if(is_Flexible(&atoms[i],&atoms[j]) == 1){
 						/*
-						printf("graph[%d] anchored onto graph[%d]\n",
-						       build_graph->id, anchor_graph->id);
+						  printf("graph[%d] anchored onto graph[%d]\n",
+						  build_graph->id, anchor_graph->id);
 						*/
 
 						build_graph->root = anchor_graph;
@@ -1103,7 +1087,7 @@ int reset_BuildableGraph(subgraph* graph)
 subgraph* get_BuildableGraph(subgraph* graph){
 
 	subgraph* graph_start = graph;
-
+	
 	while(graph != NULL){
 		if(!graph->state){
 			//graph->root->state == 2){
@@ -1134,16 +1118,14 @@ atom* get_Buildable(atom* atoms, int n_atoms, subgraph* build_graph, atom* gpa){
 	int mincon = 1000;
 
 	for(int i=0; i<n_atoms; i++){
-		if(atoms[i].build_state == 0 &&
-		   atoms[i].graph == build_graph){
-
+		if(atoms[i].build_state == 0){
 			if(atoms[i].shortest < mincon){
 				mincon = atoms[i].shortest;
 				mincon_atom = &atoms[i];
 			}
 		}
 	}
-
+	
 	return mincon_atom;
 }
 
@@ -1153,8 +1135,8 @@ int is_Built(atom* atomb){
 	//the returned value is false
 
 	/*
-	printf("is %d built: %s\n", atomb->number,
-	       atomb->build_state == 1 ? "YES" : "NO");
+	  printf("is %d built: %s\n", atomb->number,
+	  atomb->build_state == 1 ? "YES" : "NO");
 	*/
 
 	if (atomb == NULL)
@@ -1178,44 +1160,44 @@ atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence)
 	int i,j,k,n;
 	int path_fail=0;
 	atom* atomc = NULL;
-
+	
 	//printf("==================\n");
 	//printf("in BuildList for %d\n", build->number);
 
 	for(i=0; i<n_atoms; i++)
-    {
+	{
 		if(build->build_state == 1){break;}
-
+		
 		if(atoms[i].sp_paths_n == 0 || is_Hydrogen(&atoms[i])){continue;}
 
 		//printf("----------------\n");
 		//printf("from atom %d\n", atoms[i].number);
-
+		
 		n=atoms[i].sp_paths_n >=4 ? 4 : atoms[i].sp_paths_n;
-
+		
 		// loop through all paths of atom[i] to atom 'build'
 		for(j=0; j<atoms[i].sp_n_paths; j++)
-        {
+		{
 			path_fail = 0;
 
 			build->buildlist[0] = NULL;
 			build->buildlist[1] = NULL;
 			build->buildlist[2] = NULL;
-
+			
 			for(k=1; k<n; k++)
-            {
+			{
 				if(!is_Built(atoms[i].sp_paths[j][k]))
-                {
+				{
 					path_fail = 1;
 					break;
 				}
-                else
-                {
+				else
+				{
 					build->buildlist[k-1] = atoms[i].sp_paths[j][k];
 				}
 			}
 
-
+			
 			if(n < 4 && !path_fail){
 				if(!is_Built(&atoms[i])){
 					path_fail = 1;
@@ -1227,7 +1209,7 @@ atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence)
 							path_fail = 1;
 						}else{
 							build->buildlist[n] = atomc;
-
+							
 							if((n + 2) < 4){
 								if(!is_Built(atomc=get_NonBL_Connection(atomc,build))){
 									path_fail = 1;
@@ -1241,12 +1223,12 @@ atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence)
 			}
 
 			if(path_fail)
-            {
+			{
 //				printf("%d failed\n", atoms[i].number);
 				continue;
 			}
-            else
-            {
+			else
+			{
 				build->build_state = 1;
 				break;
 			}
@@ -1255,17 +1237,18 @@ atom* BuildList(atom* atoms, int n_atoms, atom* build, atom* sequence)
 	}
 
 	if(build->build_state == 1)
-    {
+	{
+		//Print_Paths(atoms,n_atoms);
 		sequence->next_build = build;
 		sequence = sequence->next_build;
 
 		Reset_Buildable(atoms,n_atoms);
-		Print_BuildList(build);
+		//Print_BuildList(build);
 
 		build->graph->remain--;
 	}
-    else
-    {
+	else
+	{
 //		printf("%d FLAGGED AS FAILED\n",build->number);
 		build->build_state = -1;
 	}
@@ -1565,7 +1548,6 @@ atom* get_Force_gpa(atom* atoms, int n_atoms, int force_gpa){
 
 void print_bond_status(bond* conect, int status){
 
-#ifdef PRINTBONDSTATUS
 	if(status == 1){
 		printf("bond[%d][%d] is Terminal\n", conect->to->number, conect->from->number);
 	}else if(status == 2){
@@ -1584,9 +1566,10 @@ void print_bond_status(bond* conect, int status){
 		printf("bond[%d][%d] is Aromatic_Nitro\n", conect->to->number, conect->from->number);
 	}else if(status == 9){
 		printf("bond[%d][%d] is Aromatic_Carboxylate\n", conect->to->number, conect->from->number);
+	}else if(status == 10){
+		printf("bond[%d][%d] is Aromatic_Amide\n", conect->to->number, conect->from->number);
 	}
-#endif
-
+	
 }
 
 int set_Flexible_Bonds(atom* atoms,int n_atoms){
@@ -1617,7 +1600,8 @@ int set_Flexible_Bonds(atom* atoms,int n_atoms){
 			else if(is_Aromatic_Sulfonate(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],7); continue; }
 			else if(is_Aromatic_Nitro(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],8); continue; }
 			else if(is_Aromatic_Carboxylate(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],9); continue; }
-
+			else if(is_Aromatic_Amide(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
+			
 			atom1_ptr->conect[j].flexible = 1;
 			flex_counter++;
 		}
@@ -1711,11 +1695,11 @@ void strongconnect(atom* atomv, atom* atomf, atom* atoms, int n_atoms, int* st, 
 			(*n_scc)--;
 		}else{
 			/*
-			printf("Tarjan(%d): ", *n_scc);
-			for(i=0; i<*n_scc; i++){
-				printf("%6d",scc[i]);
-			}
-			printf("\n");
+			  printf("Tarjan(%d): ", *n_scc);
+			  for(i=0; i<*n_scc; i++){
+			  printf("%6d",scc[i]);
+			  }
+			  printf("\n");
 			*/
 
 			set_Cyclic_Bonds(atoms,n_atoms,scc,*n_scc);
@@ -1898,6 +1882,22 @@ int is_Aromatic_Amidine(bond* conect){
 		return 1;
 	}
 
+	return 0;
+
+}
+
+int is_Aromatic_Amide(bond* conect){
+
+	if(!strncmp(conect->from->type,"C.AR",4) &&
+	   !strncmp(conect->to->type,"N.AM",4)){
+		return 1;
+
+	}else if(!strncmp(conect->to->type,"C.AR",4) &&
+		 !strncmp(conect->from->type,"N.AM",4)){
+
+		return 1;
+	}
+	
 	return 0;
 
 }
@@ -2178,7 +2178,7 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 			}
 		}
 
-	//Oxygen
+		//Oxygen
 	}else if(!strncmp(atomzero->type,"O.",2)){
 
 		if(!strncmp(atomzero->type,"O.3",3)){
@@ -2196,7 +2196,7 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 			atomzero->atomtype = 2;
 		}
 
-	// Nitrogen
+		// Nitrogen
 	}else if(!strncmp(atomzero->type,"N.",2)){
 
 		if(bonds_Carbon(atomzero) == 3){
@@ -2229,7 +2229,7 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose){
 			}
 		}
 
-	// Sulphur
+		// Sulphur
 	}else if(!strncmp(atomzero->type,"S.",2)){
 		atomzero->atomtype = 6;
 	}else if(!strncmp(atomzero->type,"F",1)){ // FLuoride
@@ -2289,11 +2289,11 @@ void set_AtomTypes_SYBYL(atom* atomzero, int verbose){
 	}else if(!strncmp(atomzero->type,"O.3",3)){
 		// important distinction to make
 		/*
-		if(count_Hydrogens(atomzero) == 1){
-			atomzero->atomtype = 14; // alcohol (O.AL)
-		}else{
-			atomzero->atomtype = 15; // ether (O.ET)
-		}
+		  if(count_Hydrogens(atomzero) == 1){
+		  atomzero->atomtype = 14; // alcohol (O.AL)
+		  }else{
+		  atomzero->atomtype = 15; // ether (O.ET)
+		  }
 		*/
 		atomzero->atomtype = 14;
 	}else if(!strncmp(atomzero->type,"O.CO2",5)){
@@ -2308,11 +2308,11 @@ void set_AtomTypes_SYBYL(atom* atomzero, int verbose){
 	}else if(!strncmp(atomzero->type,"S.3",3)){
 		// important distinction to make (alcohol vs ether)
 		/*
-		if(count_Hydrogens(atomzero) == 1){
-			atomzero->atomtype = 19; // alcohol
-		}else{
-			atomzero->atomtype = 20; // ether
-		}
+		  if(count_Hydrogens(atomzero) == 1){
+		  atomzero->atomtype = 19; // alcohol
+		  }else{
+		  atomzero->atomtype = 20; // ether
+		  }
 		*/
 		atomzero->atomtype = 18; // alcohol
 	}else if(!strncmp(atomzero->type,"S.O2",4)){
@@ -2385,11 +2385,11 @@ void set_AtomTypes_SYBYL(atom* atomzero, int verbose){
 void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 
 	/*
-	        I                  II                 III             IV               V
+	  I                  II                 III             IV               V
 	  "Strong_Doneptor", "Strong_Acceptor", "Strong_Donor", "Weak_Doneptor", "Weak_Acceptor",
-	      IV          VII          VIII        IX          X          XI             XII
+	  IV          VII          VIII        IX          X          XI             XII
 	  "Halogen", "Hydrophobic", "Aromatic", "Neutral", "Positive", "Negative", "Electrophilic"
-	 */
+	*/
 
 	// Carbon
 	if(!strncmp(atomzero->type,"C.",2)){
@@ -2404,7 +2404,7 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 			atomtype_by_charge(atomzero);
 		}
 
-	//Oxygen
+		//Oxygen
 	}else if(!strncmp(atomzero->type,"O.",2)){
 
 		// oxygen from phosphate
@@ -2464,7 +2464,7 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 			atomzero->atomtype = 9;
 		}
 
-	// Nitrogen
+		// Nitrogen
 	}else if(!strncmp(atomzero->type,"N.",2)){
 
 		if(!strncmp(atomzero->type,"N.4",3)){
@@ -2524,7 +2524,7 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 			}
 		}
 
-	// Sulphur
+		// Sulphur
 	}else if(!strncmp(atomzero->type,"S.",2)){
 
 
@@ -2578,9 +2578,9 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 
 		//atomtype_by_charge(atomzero);
 		/*
-		if(atomzero->atomtype == 9){
-			atomzero->atomtype = 12;
-		}
+		  if(atomzero->atomtype == 9){
+		  atomzero->atomtype = 12;
+		  }
 		*/
 	}else{
 
@@ -2670,13 +2670,13 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			print_command_line();
 			exit(0);
 		}
-        else if(!strcmp(argc[i],"-hf")){
-              *hydro_flex = 1;
-            *remove_hydro = 0;
+		else if(!strcmp(argc[i],"-hf")){
+			*hydro_flex = 1;
+			*remove_hydro = 0;
 	  	}
 	  	else if(!strcmp(argc[i],"-wh")){
-            *remove_hydro = 0;
-            *hydro_flex = 1;
+			*remove_hydro = 0;
+			*hydro_flex = 1;
 		}else if(!strcmp(argc[i],"-ref")){
 			*reference = 1;
 		}else if(!strcmp(argc[i],"-target")){
@@ -2699,13 +2699,13 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 		}else if(!strcmp(argc[i],"--atom_index")){
 			*atom_index = atoi(argc[++i]);
 
-		/*else if(!strcmp(argc[i],"--old_types")){
-			*old_types = 1;
-		}else if(!strcmp(argc[i],"--new_types")){
-			*new_types = 1;
-		}else if(!strcmp(argc[i],"--sybyl_types")){
-			*sybyl_types = 1;
-		}*/
+			/*else if(!strcmp(argc[i],"--old_types")){
+			 *old_types = 1;
+			 }else if(!strcmp(argc[i],"--new_types")){
+			 *new_types = 1;
+			 }else if(!strcmp(argc[i],"--sybyl_types")){
+			 *sybyl_types = 1;
+			 }*/
 
 		}else if(!strcmp(argc[i],"--res_name")){
 			strncpy(force_outres->name,argc[++i],3);
@@ -3061,9 +3061,9 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 			*/
 
 			/*
-			for(i=0; i<9; i++)
-				printf("fields[%d]=%s\n",i,fields[i]);
-			printf("\n");
+			  for(i=0; i<9; i++)
+			  printf("fields[%d]=%s\n",i,fields[i]);
+			  printf("\n");
 			*/
 
 			if(ori_pcg != NULL){
@@ -3175,7 +3175,7 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 
 				MOL2[map_atom[atoi(fields[1])]].conect[MOL2[map_atom[atoi(fields[1])]].n_bonds].dist =
 					dist(MOL2[map_atom[atoi(fields[1])]].coor,
-						 MOL2[map_atom[atoi(fields[1])]].conect[MOL2[map_atom[atoi(fields[1])]].n_bonds].to->coor);
+					     MOL2[map_atom[atoi(fields[1])]].conect[MOL2[map_atom[atoi(fields[1])]].n_bonds].to->coor);
 				MOL2[map_atom[atoi(fields[2])]].conect[MOL2[map_atom[atoi(fields[2])]].n_bonds].dist =
 					dist(MOL2[map_atom[atoi(fields[2])]].coor,
 					     MOL2[map_atom[atoi(fields[2])]].conect[MOL2[map_atom[atoi(fields[2])]].n_bonds].to->coor);
@@ -3337,6 +3337,7 @@ void get_Flexible_Atoms(atom* atoms,int n_atoms,bond* flex,atom* atomlist[], int
 
 			sense[(*nlist)] = atoms[i].buildlist[0]->number == flex->to->number ? 1 : -1;
 			atomlist[(*nlist)] = &atoms[i];
+			printf("added atom %d to atomlist\n", atoms[i].index);
 
 			(*nlist)++;
 		}
@@ -3412,7 +3413,7 @@ void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hy
 	infile_ptr = fopen(filename,"w");
 
 	if(infile_ptr == NULL)
-    {
+	{
 		fprintf(stderr,"could not open file %s for writing\n", filename);
 		return;
 	}
@@ -3420,7 +3421,7 @@ void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hy
 
 	//    1:    1.462  112.662   82.309
 	for(i=0; i<n_atoms; i++)
-    {
+	{
 		atomw = &atoms[i];
 
 		if(remove_hydro && is_Hydrogen(atomw)) { continue; }
@@ -3514,7 +3515,7 @@ void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remov
 	for(i=0; i<n_flex; i++){
 		nlist=0;
 		get_Flexible_Atoms(atoms,n_atoms,flex[i],atomlist,sense,&nlist,remove_hydro);
-
+		
 		if(nlist == 0){
 			printf("the flexible bond [%d][%d] could not be set\n",
 			       flex[i]->to->number, flex[i]->from->number);
@@ -3551,19 +3552,7 @@ void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remov
 		}
 		fprintf(infile_ptr, "\n");
 	}
-
-	//fprintf(infile_ptr,"ICDATA %s\n", icfile);
-
-	while(graph != NULL){
-		fprintf(infile_ptr, "SGRAPH%5d%5d%5d%5d\n",
-			graph->id,
-			graph->root->id,
-			graph->size,
-			graph->recsize);
-
-		graph = graph->prev;
-	}
-
+	
 	fprintf(infile_ptr,"ENDINP\n");
 
 	fclose(infile_ptr);

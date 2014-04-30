@@ -217,6 +217,7 @@ int is_Triple(bond* conect);
 int is_Planar_Amine(bond* conect);
 int is_Amine(atom* atomzero);
 int is_Aromatic_Amidine(bond* conect);
+int is_Aromatic_Amide(bond* conect);
 int is_Carbon_Amine(atom* atomzero);
 int is_Carbon_Carboxylate(atom* atomzero);
 int is_Aromatic_Sulfonate(bond* conect);
