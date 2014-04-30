@@ -1590,10 +1590,10 @@ int set_Flexible_Bonds(atom* atoms,int n_atoms){
 			atom2_ptr = atom1_ptr->conect[j].to;
 			if(is_Hydrogen(atom2_ptr)) { continue; }
 			else if(atom1_ptr->conect[j].type != 1 || atom1_ptr->conect[j].cyclic) { continue; }
-
+			
 			else if(is_Terminal(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],1); continue; }
 			else if(is_Imine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],2); continue; }
-			else if(is_Amide(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],3); continue; }
+			//else if(is_Amide(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],3); continue; }
 			else if(is_Triple(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],4); continue; }
 			else if(is_Planar_Amine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],5); continue; }
 			else if(is_Aromatic_Amidine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],6); continue; }
@@ -1812,7 +1812,7 @@ int is_Imine(bond* conect){
 }
 
 int is_Amide(bond* conect){
-
+	
 	if(!strncmp(conect->to->type,"C.2",3) &&
 	   (!strncmp(conect->from->type,"N.2",3) ||
 	    !strncmp(conect->from->type,"N.AM",4) ||
