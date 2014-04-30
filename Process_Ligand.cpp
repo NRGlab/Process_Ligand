@@ -3337,7 +3337,7 @@ void get_Flexible_Atoms(atom* atoms,int n_atoms,bond* flex,atom* atomlist[], int
 
 			sense[(*nlist)] = atoms[i].buildlist[0]->number == flex->to->number ? 1 : -1;
 			atomlist[(*nlist)] = &atoms[i];
-			printf("added atom %d to atomlist\n", atoms[i].index);
+			//printf("added atom %d to atomlist\n", atoms[i].index);
 
 			(*nlist)++;
 		}
