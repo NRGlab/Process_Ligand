@@ -1,28 +1,30 @@
 #include "Process_Ligand.h"
 
-#ifdef _WIN32
+float vec_norm(const float *v) {
+	return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+}
+
 void vec_sub(float *a, const float *b, const float *c) {
-#else
-	inline void vec_sub(float *a, const float *b, const float *c) {
-#endif
-		a[0]=b[0]-c[0];
-		a[1]=b[1]-c[1];
-		a[2]=b[2]-c[2];
-	}
+	a[0]=b[0]-c[0];
+	a[1]=b[1]-c[1];
+	a[2]=b[2]-c[2];
+}
 
-#ifdef _WIN32
-	float dot_prod(const float *v1, const float *v2) {
-#else
-		inline float dot_prod(const float *v1, const float *v2) {
-#endif
-			return (v1[0]* v2[0] + v1[1]* v2[1] + v1[2] * v2[2]);
-		}
-
+float dot_prod(const float *v1, const float *v2) {
+	return (v1[0]* v2[0] + v1[1]* v2[1] + v1[2] * v2[2]);
+}
+		
 float * cross_prod(float *x1, const float *x2, const float *x3) {
-    x1[0] =  x2[1]*x3[2] - x3[1]*x2[2];
-    x1[1] = -x2[0]*x3[2] + x3[0]*x2[2];
-    x1[2] =  x2[0]*x3[1] - x3[0]*x2[1];
-    return x1;
+	x1[0] =  x2[1]*x3[2] - x3[1]*x2[2];
+	x1[1] = -x2[0]*x3[2] + x3[0]*x2[2];
+	x1[2] =  x2[0]*x3[1] - x3[0]*x2[1];
+	return x1;
+}
+
+float * plane(float *p, const float *c, const float *n){
+	p[0] = n[0]; p[1] = n[1]; p[2] = n[2];
+	p[3] = p[0]*c[0] + p[1]*c[1] + p[2]*c[2];
+	return p;
 }
 
 float angle(const float *a, const float *b, const float *c) {

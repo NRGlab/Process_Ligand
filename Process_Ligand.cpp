@@ -1,5 +1,7 @@
 #include "Process_Ligand.h"
 #include "openbabel/obconversion.h"
+#include "openbabel/rotor.h"
+#include "openbabel/mol.h"
 
 #define HYDROPHOBIC_THRESHOLD       0.0655    // based on long aliphatic chains with a Csp3 (  CH3-R   )
                                               // see TEST folder in src directory
@@ -18,10 +20,10 @@ int main(int argv, char* argc[])
 	atom* gpa2=NULL,*gpa3=NULL;
 	atom* build=NULL;    // next atom to build in buildlist
 	atom* sequence=NULL;
-
+	
 	subgraph* graph=NULL, *build_graph;
 	subgraph* anchor_graph=NULL;
-
+	
 	atom  pcg1,pcg2,pcg3;      //  ligand center geometry atom used in buildlist (number is 0)
 
 
@@ -557,12 +559,21 @@ int Convert_2_MOL2(char* filename, const char* informat, const char* outformat, 
 	}
 
 	OpenBabel::OBConversion conv(&ifs,&ofs);
-
+	
 	if(!conv.SetInAndOutFormats(informat,outformat)){
 		strcpy(error,"ERROR: OpenBabel: Formats not available\n");
 		return 0;
 	}
 
+	/*
+	OpenBabel::OBMol mol;
+	conv.Read(&mol);
+	
+	OpenBabel::OBRotorList rl;
+	rl.Setup(mol);
+	cout << "# of Rotors: " << rl.Size() << endl;
+	*/
+	
 	// default error msg
 	strcpy(error,"ERROR: no molecules converted\n");
 
@@ -579,7 +590,7 @@ int Convert_2_MOL2(char* filename, const char* informat, const char* outformat, 
 	
 	ofs.close();
 	ifs.close();
-	
+		
 	strcpy(filename,outfilename);
 	
 	return(n);
@@ -1548,7 +1559,9 @@ atom* get_Force_gpa(atom* atoms, int n_atoms, int force_gpa){
 
 void print_bond_status(bond* conect, int status){
 
-	if(status == 1){
+	if(status == 0){
+		printf("bond[%d][%d] is not single or cyclic\n", conect->to->number, conect->from->number);
+	}else if(status == 1){
 		printf("bond[%d][%d] is Terminal\n", conect->to->number, conect->from->number);
 	}else if(status == 2){
 		printf("bond[%d][%d] is Imine\n", conect->to->number, conect->from->number);
@@ -1568,6 +1581,14 @@ void print_bond_status(bond* conect, int status){
 		printf("bond[%d][%d] is Aromatic_Carboxylate\n", conect->to->number, conect->from->number);
 	}else if(status == 10){
 		printf("bond[%d][%d] is Aromatic_Amide\n", conect->to->number, conect->from->number);
+	}else if(status == 10){
+		printf("bond[%d][%d] is Between Perpendicular Cyclics\n", conect->to->number, conect->from->number);
+	}else if(status == 12){
+		printf("bond[%d][%d] is Guanidium\n", conect->to->number, conect->from->number);
+	}else if(status == 13){
+		printf("bond[%d][%d] is Aromatic Meta\n", conect->to->number, conect->from->number);
+	}else if(status == 14){
+		printf("bond[%d][%d] is Aromatic Planar Amide\n", conect->to->number, conect->from->number);
 	}
 	
 }
@@ -1584,25 +1605,36 @@ int set_Flexible_Bonds(atom* atoms,int n_atoms){
 
 		if(is_Hydrogen(atom1_ptr)) { continue; }
 		else if(is_Methyl(atom1_ptr)) { continue; }
-
+		
 		for(j=1; j<=atom1_ptr->n_bonds; j++)
 		{
 			atom2_ptr = atom1_ptr->conect[j].to;
-			if(is_Hydrogen(atom2_ptr)) { continue; }
-			else if(atom1_ptr->conect[j].type != 1 || atom1_ptr->conect[j].cyclic) { continue; }
+
+			if(is_Hydrogen(atom2_ptr)) { continue; }			
 			
+			else if(atom1_ptr->conect[j].type != 1 || atom1_ptr->conect[j].cyclic) {
+				//print_bond_status(&atom1_ptr->conect[j],0);
+				continue;
+			}
 			else if(is_Terminal(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],1); continue; }
 			else if(is_Imine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],2); continue; }
 			//else if(is_Amide(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],3); continue; }
 			else if(is_Triple(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],4); continue; }
-			else if(is_Planar_Amine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],5); continue; }
-			else if(is_Aromatic_Amidine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],6); continue; }
-			else if(is_Aromatic_Sulfonate(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],7); continue; }
-			else if(is_Aromatic_Nitro(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],8); continue; }
-			else if(is_Aromatic_Carboxylate(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],9); continue; }
-			else if(is_Aromatic_Amide(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
+			//else if(is_Triple(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],4); continue; }
+			//else if(is_Planar_Amine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],5); continue; }
+			//else if(is_Aromatic_Amidine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],6); continue; }
+			//else if(is_Aromatic_Sulfonate(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],7); continue; }
+			//else if(is_Aromatic_Nitro(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],8); continue; }
+			//else if(is_Aromatic_Carboxylate(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],9); continue; }
+			//else if(is_Aromatic_Amine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
+			//else if(is_Between_Perpendicular_Aromatic(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
+			else if(is_Guanidium(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],12); continue; }
+			else if(is_Meta(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],13); continue; }
+			else if(is_MetaAmine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],14); continue; }
 			
 			atom1_ptr->conect[j].flexible = 1;
+			
+			printf("set bond[%d][%d] as flexible\n", atom1_ptr->number, atom2_ptr->number);
 			flex_counter++;
 		}
 	}
@@ -1618,17 +1650,23 @@ void set_Cyclic_Bonds(atom* atoms,int n_atoms, int* scc,int n_scc){
 	for(i=0; i<n_atoms; i++)
 	{
 		atomz1=&atoms[i];
-
+		
 		if(is_Cyclic(atomz1,scc,n_scc))
 		{
 			for(j=1; j<=atomz1->n_bonds; j++)
 			{
 				atomz2=atomz1->conect[j].to;
-
+				
 				if(is_Cyclic(atomz2,scc,n_scc))
 				{
 					atomz1->conect[j].cyclic = 1;
 					//printf("bond[%d][%d] is cyclic\n", atomz1->number, atomz2->number);
+					
+					if(n_scc == 5){
+						atomz1->cycle5++;
+					}else if(n_scc == 6){
+						atomz1->cycle6++;
+					}
 				}
 			}
 		}
@@ -1676,7 +1714,7 @@ void strongconnect(atom* atomv, atom* atomf, atom* atoms, int n_atoms, int* st, 
 			atomv->vertex.lowlink = MIN(atomv->vertex.lowlink,atomw->vertex.index);
 		}
 	}
-
+	
 	if(atomv->vertex.lowlink == atomv->vertex.index){
 
 		(*n_root)++;
@@ -1695,13 +1733,13 @@ void strongconnect(atom* atomv, atom* atomf, atom* atoms, int n_atoms, int* st, 
 			(*n_scc)--;
 		}else{
 			/*
-			  printf("Tarjan(%d): ", *n_scc);
-			  for(i=0; i<*n_scc; i++){
-			  printf("%6d",scc[i]);
-			  }
-			  printf("\n");
+			printf("Tarjan(%d): ", *n_scc);
+			for(i=0; i<*n_scc; i++){
+				printf("%6d",scc[i]);
+			}
+			printf("\n");
 			*/
-
+			
 			set_Cyclic_Bonds(atoms,n_atoms,scc,*n_scc);
 
 		}
@@ -1801,6 +1839,77 @@ int is_Methyl(atom* atomzero){
 
 }
 
+int has_MetaGroup(atom* atomz){
+	atom *atom2=NULL,*atom3=NULL;
+	
+	roll_Cycle(atomz,&atom2,&atom3,false);
+	if(atom2 != NULL && count_Heavy(atom2) > 2){
+		return 1;
+	}
+	
+        atom2=NULL;atom3=NULL;
+	roll_Cycle(atomz,&atom2,&atom3,true);
+	if(atom2 != NULL && count_Heavy(atom2) > 2){
+		return 1;
+	}
+
+	return 0;
+}
+
+int is_Meta(bond* conect){
+
+	if(!strncmp(&conect->from->type[1],".AR",3) &&
+	   !strncmp(&conect->to->type[1],".AR",3)){
+
+		if((conect->from->cycle5 || conect->from->cycle6) && 
+		   (conect->to->cycle5 || conect->to->cycle6)){
+			
+			if(conect->from->cycle6 && has_MetaGroup(conect->from)){
+				return 1;
+			}else if(conect->to->cycle6 && has_MetaGroup(conect->to)){
+				return 1;
+			}
+			
+		}
+	}
+
+	return 0;
+}
+
+int is_MetaAmine(bond* conect){
+
+	atom *npl3=NULL, *ar=NULL;
+	if(!strncmp(&conect->from->type[1],".AR",3) &&
+	   !strncmp(conect->to->type,"N.PL3",5)){
+		
+		npl3 = conect->to;
+		ar = conect->from;
+		
+	}else if(!strncmp(&conect->to->type[1],".AR",3) &&
+		 !strncmp(conect->from->type,"N.PL3",5)){
+		
+		npl3 = conect->from;
+		ar = conect->to;
+	}
+	
+	if(npl3 != NULL && ar != NULL){
+		atom *atom2=NULL,*atom3=NULL;
+		
+		roll_Cycle(ar,&atom2,&atom3,false);
+		if(atom2 != NULL && !strncmp(atom2->type,"N.",2)){
+			return 1;
+		}
+
+		atom2=NULL; atom3=NULL;
+		roll_Cycle(ar,&atom2,&atom3,true);
+		if(atom2 != NULL && !strncmp(atom2->type,"N.",2)){
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 int is_Imine(bond* conect){
 
 	if(!strncmp(conect->from->type,"N.2",3) &&
@@ -1810,7 +1919,6 @@ int is_Imine(bond* conect){
 
 	return 0;
 }
-
 int is_Amide(bond* conect){
 	
 	if(!strncmp(conect->to->type,"C.2",3) &&
@@ -1886,20 +1994,79 @@ int is_Aromatic_Amidine(bond* conect){
 
 }
 
-int is_Aromatic_Amide(bond* conect){
-
+int is_Aromatic_Amine(bond* conect){
+	
 	if(!strncmp(conect->from->type,"C.AR",4) &&
-	   !strncmp(conect->to->type,"N.AM",4)){
+	   !strncmp(conect->to->type,"N.PL3",5)){
 		return 1;
 
 	}else if(!strncmp(conect->to->type,"C.AR",4) &&
-		 !strncmp(conect->from->type,"N.AM",4)){
+		 !strncmp(conect->from->type,"N.PL3",5)){
 
 		return 1;
 	}
 	
 	return 0;
 
+}
+
+int is_Between_Perpendicular_Aromatic(bond* conect){
+	
+	if(!strncmp(conect->from->type,"C.AR",4) &&
+	   !strncmp(conect->to->type,"C.AR",4)){
+		atom *atom11=NULL,*atom12=NULL,*atom13=NULL;
+		atom11 = conect->from;
+		atom *atom21=NULL,*atom22=NULL,*atom23=NULL;
+		atom21 = conect->to;
+		
+		roll_Cycle(atom11,&atom12,&atom13,false);
+		printf("atom11=%d\tatom12=%d\tatom13=%d\n",
+		       atom11->number, atom12->number, atom13->number);
+		roll_Cycle(atom21,&atom22,&atom23,false);
+		printf("atom21=%d\tatom22=%d\tatom23=%d\n",
+		       atom21->number, atom22->number, atom23->number);
+		
+		float v11[3],v12[3],v21[3],v22[3];
+		vec_sub(v11,atom11->coor,atom12->coor);
+		vec_sub(v12,atom12->coor,atom13->coor);
+		vec_sub(v21,atom21->coor,atom22->coor);
+		vec_sub(v22,atom22->coor,atom23->coor);
+		
+		float n1[3],n2[3];
+		cross_prod(n1,v11,v12);
+		cross_prod(n2,v21,v22);
+		
+		float angle = acos(dot_prod(n1,n2) / (vec_norm(n1)*vec_norm(n2))) * 360.0 / (2*PI);
+		//printf("angle=%.3f\n", angle);
+	}
+	
+	return 0;
+
+}
+
+void roll_Cycle(const atom* atom1, atom** atom2, atom** atom3, bool inverse){
+	
+	if(inverse){
+		for(int i=atom1->n_bonds; i>=1; i--){
+			if(atom1->conect[i].cyclic){
+				(*atom2) = atom1->conect[i].to;
+			}
+		}
+	}else{
+		for(int i=1; i<=atom1->n_bonds; i++){
+			if(atom1->conect[i].cyclic){
+				(*atom2) = atom1->conect[i].to;			
+			}
+		}
+	}
+	
+	if((*atom2) != NULL){
+		for(int i=1; i<=(*atom2)->n_bonds; i++){
+			if((*atom2)->conect[i].cyclic && (*atom2)->conect[i].to != atom1){
+				(*atom3) = (*atom2)->conect[i].to;
+			}
+		}
+	}
 }
 
 int is_Aromatic_Sulfonate(bond* conect){
@@ -2014,6 +2181,22 @@ int is_Carbon_Carboxylate(atom* atomzero){
 	return 0;
 }
 
+int is_Guanidium(bond* conect){
+	//atom *ccat = NULL;
+	if(!strncmp(conect->from->type,"C.CAT",5) &&
+	   !strncmp(conect->to->type,"N.",2)){
+		//ccat = conect->from;
+		return 1;
+	}else if(!strncmp(conect->to->type,"C.CAT",5) &&
+		 !strncmp(conect->from->type,"N.",2)){
+		//ccat = conect->to;
+		return 1;
+	}
+
+	return 0;
+}
+
+/*
 int is_Guanidium(atom* atomzero){
 
 	int i,j,dbl,sng;
@@ -2043,6 +2226,7 @@ int is_Guanidium(atom* atomzero){
 
 	return 0;
 }
+*/
 
 int count_Carbons(atom* atomzero){
 
@@ -2472,11 +2656,13 @@ void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose){
 			atomzero->atomtype = 10;
 
 		}else if(!strncmp(atomzero->type,"N.PL3",5)){
-
+/*
 			if(is_Guanidium(atomzero)){ //bonds_Carbocation(atomzero)){
 				atomzero->atomtype = 10;
 
-			}else if(count_Hydrogens(atomzero) > 0){
+			}else 
+*/
+			if(count_Hydrogens(atomzero) > 0){
 				atomzero->atomtype = 3;
 
 			}else{
@@ -3114,6 +3300,8 @@ atom* read_MOL2(char* filename, int* n_atoms, int* map_atom, residue *extract, i
 			MOL2[*n_atoms].gpa=0;
 			MOL2[*n_atoms].build_state=0;
 			MOL2[*n_atoms].shortest=1000;
+			MOL2[*n_atoms].cycle5=0;
+			MOL2[*n_atoms].cycle6=0;
 
 			MOL2[*n_atoms].graph = NULL;
 

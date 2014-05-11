@@ -106,7 +106,7 @@ struct atom_struct {
 	int   build_state;   // builtlist state   1: built
 	                     //                   0: ready
 	                     //                  -1: failed
-	
+
 	atom* buildlist[3];  // first 3 neighbours
 	int   sp_state;      // state -   0: none  - 1: ready
                              //           2: check - 3: done
@@ -125,6 +125,8 @@ struct atom_struct {
 	float ang;
 	float dih;
 
+	int cycle5;
+	int cycle6;
 };
 
 
@@ -209,23 +211,29 @@ int count_Phosphorus(atom* atomzero);
 int count_Aromatic(atom* atomzero);
 int count_Cyclic(atom* atomzero);
 
-int is_Guanidium(atom* atomzero);
 int is_Methyl(atom* atomzero);
+int is_Guanidium(bond* conect);
 int is_Imine(bond* conect);
 int is_Amide(bond* conect);
 int is_Triple(bond* conect);
 int is_Planar_Amine(bond* conect);
 int is_Amine(atom* atomzero);
 int is_Aromatic_Amidine(bond* conect);
-int is_Aromatic_Amide(bond* conect);
+int is_Aromatic_Amine(bond* conect);
 int is_Carbon_Amine(atom* atomzero);
 int is_Carbon_Carboxylate(atom* atomzero);
 int is_Aromatic_Sulfonate(bond* conect);
+int is_Between_Perpendicular_Aromatic(bond* conect);
 int is_Sulfonate(atom* atomzero);
 int is_Aromatic_Nitro(bond* conect);
 int is_Nitro(atom* atomzero);
 int is_Aromatic_Carboxylate(bond* conect);
 int is_Terminal(bond* conect);
+int is_Meta(bond* conect);
+int is_MetaAmine(bond* conect);
+int has_MetaGroup(atom* atomz);
+
+void roll_Cycle(const atom* atom1, atom** atom2, atom** atom3, bool inverse);
 
 void Print_subGraph(subgraph* graph, atom* atoms, int n_atoms);
 int validate_Graph(subgraph* graph);
@@ -276,6 +284,7 @@ float angle(const float *a, const float *b, const float *c);
 float bndang(const float* a,const float* b, const float* c);
 float dihedral(const float *a1,const float *a2,const float *a3,const float *a4);
 float dihang(const float *a1,const float *a2,const float *a3,const float *a4);
+float vec_norm(const float *v);
 void vec_sub(float *a, const float *b, const float *c);
 float dot_prod(const float *v1, const float *v2);
 float dist(const float *a, const float *b);
