@@ -1,7 +1,5 @@
 #include "Process_Ligand.h"
 #include "openbabel/obconversion.h"
-#include "openbabel/rotor.h"
-#include "openbabel/mol.h"
 
 #define HYDROPHOBIC_THRESHOLD       0.0655    // based on long aliphatic chains with a Csp3 (  CH3-R   )
                                               // see TEST folder in src directory
@@ -1629,7 +1627,7 @@ int set_Flexible_Bonds(atom* atoms,int n_atoms){
 			//else if(is_Aromatic_Amine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
 			//else if(is_Between_Perpendicular_Aromatic(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
 			else if(is_Guanidium(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],12); continue; }
-			else if(is_Meta(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],13); continue; }
+			//else if(is_Meta(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],13); continue; }
 			else if(is_MetaAmine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],14); continue; }
 			
 			atom1_ptr->conect[j].flexible = 1;
