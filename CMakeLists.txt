@@ -35,9 +35,12 @@ target_include_directories(ProcessLigand PRIVATE
         ${STATIC_INSTALL_DIR}/include/openbabel3
 )
 
-if(WIN32)
+if(MSVC)
     set(OPENBABEL_LIB_DIR ${STATIC_INSTALL_DIR}/bin)
     set(OPENBABEL_LIB_NAME openbabel-3)
+elseif(MINGW)
+    set(OPENBABEL_LIB_DIR ${STATIC_INSTALL_DIR}/bin)
+    set(OPENBABEL_LIB_NAME openbabel)
 else()
     set(OPENBABEL_LIB_DIR ${STATIC_INSTALL_DIR}/lib)
     set(OPENBABEL_LIB_NAME openbabel)
@@ -48,6 +51,8 @@ target_link_libraries(ProcessLigand PRIVATE ${OPENBABEL_LIB_NAME})
 
 if(BUILD_STATIC_EXECUTABLE)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        target_link_options(ProcessLigand PRIVATE -static)
+    elseif(MINGW)
         target_link_options(ProcessLigand PRIVATE -static)
     elseif(APPLE)
         message(WARNING "Full static linking (-static) is not supported on macOS and will be skipped.")
