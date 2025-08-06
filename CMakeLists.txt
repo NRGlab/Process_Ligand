@@ -1,53 +1,58 @@
 cmake_minimum_required(VERSION 3.15)
 project(ProcessLigand LANGUAGES CXX)
 
-# --- Static Build Option ---
-# Enabled by passing -DBUILD_STATIC_EXECUTABLE=ON to the cmake command 
-option(BUILD_STATIC_EXECUTABLE "Build a fully static executable" OFF)
+include(FetchContent)
+
+option(BUILD_STATIC_EXECUTABLE "Build a statically linked executable" OFF)
 
 if(BUILD_STATIC_EXECUTABLE)
-    message(STATUS "Static build enabled.")
+    message(STATUS "Building a static executable")
     if(MSVC)
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
+    set(BUILD_SHARED OFF CACHE BOOL "Force disable shared builds")
+else()
+    message(STATUS "Building a dynamic executable")
+    set(BUILD_SHARED On CACHE BOOL "Force disable shared builds")
 endif()
 
-# --- User-configurable Open Babel Path ---
-# Allow the user to specify the path to Open Babel when running cmake (path to folder containing bin, lib, include),...:
-# cmake -DSTATIC_INSTALL_DIR=/path/to/your/openbabel .. 
-set(STATIC_INSTALL_DIR "" CACHE PATH "Path to the static Open Babel installation directory")
+set(BUILD_GUI OFF CACHE BOOL "Disable building the Open Babel GUI")
+set(PYTHON_BINDINGS OFF CACHE BOOL "Disable Python language bindings")
+set(PERL_BINDINGS OFF CACHE BOOL "Disable Perl language bindings")
+set(RUBY_BINDINGS OFF CACHE BOOL "Disable Ruby language bindings")
+set(CSHARP_BINDINGS OFF CACHE BOOL "Disable C# language bindings")
+set(JAVA_BINDINGS OFF CACHE BOOL "Disable Java language bindings")
+set(WITH_MAEPARSER OFF CACHE BOOL "Disable the MAEParser feature")
+set(PTHREAD_LIBRARY "" CACHE FILEPATH "Disable PThread library")
+set(ZLIB_LIBRARY OFF CACHE FILEPATH "Disable ZLIB library")
+set(ZLIB_INCLUDE_DIR OFF CACHE PATH "Disable ZLIB includes")
+set(INCHI_LIBRARY OFF CACHE FILEPATH "Disable InChI library")
+set(LIBXML2_LIBRARY OFF CACHE FILEPATH "Disable LibXML2 library")
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 
-if(NOT STATIC_INSTALL_DIR)
-    message(FATAL_ERROR "STATIC_INSTALL_DIR is not set. Please specify the path using -DSTATIC_INSTALL_DIR=/path/to/openbabel")
-endif()
+FetchContent_Declare(
+        openbabel
+        GIT_REPOSITORY https://github.com/ThomasDesc/openbabel.git
+        GIT_TAG master
+)
+
+FetchContent_MakeAvailable(openbabel)
+
+message(STATUS "Open Babel source directory: ${openbabel_SOURCE_DIR}")
+message(STATUS "Open Babel binary directory: ${openbabel_BINARY_DIR}")
 
 add_executable(ProcessLigand
         geometry.cpp
         Process_Ligand.cpp
 )
-
-set_target_properties(ProcessLigand PROPERTIES
-        CXX_STANDARD 14
-        CXX_STANDARD_REQUIRED ON
-)
+set_property(TARGET ProcessLigand PROPERTY
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+target_link_libraries(ProcessLigand PRIVATE openbabel)
 
 target_include_directories(ProcessLigand PRIVATE
-        ${STATIC_INSTALL_DIR}/include/openbabel3
+        ${openbabel_SOURCE_DIR}/include
+        ${openbabel_BINARY_DIR}/include
 )
-
-if(MSVC)
-    set(OPENBABEL_LIB_DIR ${STATIC_INSTALL_DIR}/bin)
-    set(OPENBABEL_LIB_NAME openbabel-3)
-elseif(MINGW)
-    set(OPENBABEL_LIB_DIR ${STATIC_INSTALL_DIR}/bin)
-    set(OPENBABEL_LIB_NAME openbabel)
-else()
-    set(OPENBABEL_LIB_DIR ${STATIC_INSTALL_DIR}/lib)
-    set(OPENBABEL_LIB_NAME openbabel)
-endif()
-
-target_link_directories(ProcessLigand PRIVATE ${OPENBABEL_LIB_DIR})
-target_link_libraries(ProcessLigand PRIVATE ${OPENBABEL_LIB_NAME})
 
 if(BUILD_STATIC_EXECUTABLE)
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
