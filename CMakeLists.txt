@@ -34,6 +34,7 @@ FetchContent_Declare(
         openbabel
         GIT_REPOSITORY https://github.com/ThomasDesc/openbabel.git
         GIT_TAG master
+        CMAKE_ARGS -DCMAKE_SKIP_INSTALL_RULES=ON -DOPENBABEL_SKIP_INSTALL=ON
 )
 
 FetchContent_MakeAvailable(openbabel)
