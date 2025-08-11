@@ -57,6 +57,8 @@ int main(int argv, char* argc[])
 	int gen3D=0;         // generate a 3d conformation of the ligand
 
 	int verbose=0;       // outputing detailed informations
+	int print_filepaths=0; // print path to written file
+	int delete_tmp=0;    // delete temporary files
 
 	char original_filename[MAX_PATH]; // original input file
 	char filename[MAX_PATH]; // PDB ligand file
@@ -105,11 +107,9 @@ int main(int argv, char* argc[])
 	pcg1.coor[0] = 1.0f;
 	pcg3.coor[1] = 1.0f;
 
-	parse_command_line(argv,argc,filename,outname,&verbose,
-			   &hydro_flex,&remove_hydro,&force_gpa,&force_pcg,
-			   &atom_index,&force_outres,extract_string,
-			   &reference,&old_types,&new_types,&sybyl_types,
-			   &convert_only,&process_only,&gen3D,outformat,&target);
+	parse_command_line(argv,argc,filename,outname,&verbose, &hydro_flex,&remove_hydro,&force_gpa,&force_pcg,
+		&atom_index,&force_outres,extract_string,&reference,&old_types,&new_types,&sybyl_types,
+		&convert_only,&process_only,&gen3D,outformat,&target,&print_filepaths,&delete_tmp);
 
 
 	map_atom = (int*)malloc(MAX_MAP*sizeof(int));
@@ -142,7 +142,7 @@ int main(int argv, char* argc[])
 			return(2);
 		}
 		
-		printf("File format is '%s'\n", informat);
+		if (verbose >= 1) printf("File format is '%s'\n", informat);
 
 		/*
 		  if(convert_only){
@@ -165,7 +165,6 @@ int main(int argv, char* argc[])
 
 			if(convert_only)
 			{
-				printf("Done.\n");
 				return 0;
 			}
 		}
@@ -176,25 +175,28 @@ int main(int argv, char* argc[])
 	}
 
 	atoms = read_MOL2(filename,&n_atoms,map_atom,extract,n_extract,ori_pcg,atom_index);
+	if (strcmp(informat, "mol2") != 0 && delete_tmp == 1)
+	{
+		remove(filename);
+	}
 	set_AtomTypes(atoms, n_atoms, old_types, new_types, sybyl_types, verbose);
-	
 	if(target){
 		get_Target_Filename(filename,target_filename);
-		Write_Target(original_filename,target_filename,atoms,n_atoms);
+		Write_Target(original_filename,target_filename,atoms,n_atoms,print_filepaths);
 		return(0);
 	}
 
 	// no atoms matches the extraction list OR no atoms in PDB/MOL2 file.
 	if(atoms == NULL || n_atoms == 0){ printf("ERROR: no atoms found\n"); return 1;}
+	if (verbose >= 1) printf("read %d atoms\n", n_atoms);
 
-	printf("read %d atoms\n", n_atoms);
 	get_Ligand_Center_Geometry(atoms,n_atoms,lig_pcg);
 	
 
 	if(force_pcg != NULL){
 		// Adds up the user-defined PCG
-		printf("translation of force_pcg (%8.3f %8.3f %8.3f)\n",
-		       force_pcg[0], force_pcg[1], force_pcg[2]);
+		if (verbose >= 1) printf("translation of force_pcg (%8.3f %8.3f %8.3f)\n",
+			force_pcg[0], force_pcg[1], force_pcg[2]);
 
 		Translate(&pcg1,force_pcg);
 		Translate(&pcg2,force_pcg);
@@ -202,7 +204,7 @@ int main(int argv, char* argc[])
 
 	}else if(ori_pcg != NULL){
 		// One residue was extracted
-		printf("translation of ori_pcg (%8.3f %8.3f %8.3f)\n",
+		if (verbose >= 1) printf("translation of ori_pcg (%8.3f %8.3f %8.3f)\n",
 		       ori_pcg[0], ori_pcg[1], ori_pcg[2]);
 
 		Translate(&pcg1,ori_pcg);
@@ -224,20 +226,23 @@ int main(int argv, char* argc[])
 		}
 	}
 
-	printf("number of Hydrogens is %d\n", n_hydro);
+	if (verbose >= 1) printf("number of Hydrogens is %d\n", n_hydro);
 	// 3 global positionning atoms are needed to build a ligand
 	if(n_atoms - n_hydro < 3){ printf("ERROR: the ligand needs at least 3 heavy atoms\n"); return 1; }
 
 
 	//Print_Connections(atoms,n_atoms);
-	if(Tarjan(atoms,n_atoms,scc,&n_scc) != n_atoms){
-		printf("molecule is cyclic\n");
-	}else{
-		printf("molecule is acyclic\n");
+	if (verbose >= 1)
+	{
+		if(Tarjan(atoms,n_atoms,scc,&n_scc) != n_atoms){
+			printf("molecule is cyclic\n");
+		}else{
+			printf("molecule is acyclic\n");
+		}
 	}
 	
 	// set bonds as flexible that meet criteria
-	printf("Found %d flexible bond(s)\n", set_Flexible_Bonds(atoms,n_atoms));
+	if (verbose >= 1) printf("Found %d flexible bond(s)\n", set_Flexible_Bonds(atoms,n_atoms));
 
 	
 	// divide molecule into sub graphs
@@ -245,14 +250,14 @@ int main(int argv, char* argc[])
 	//Print_subGraph(graph,atoms,n_atoms);
 
 	if(gpa == NULL){
-		printf("largest graph will serve as anchor\n");
+		if (verbose >= 1) printf("largest graph will serve as anchor\n");
 		anchor_graph = get_LargestGraph(graph);
 	}else{
-		printf("gpa forced to %d: gpa graph will serve as anchor\n", gpa->number);
+		if (verbose >= 1) printf("gpa forced to %d: gpa graph will serve as anchor\n", gpa->number);
 		anchor_graph = get_GPAGraph(graph,gpa);
 	}
 
-	printf("gpa graph has size %d\n", anchor_graph->size);
+	if (verbose >= 1) printf("gpa graph has size %d\n", anchor_graph->size);
 	anchor_graph->root = anchor_graph;
 
 	connect_Graph(graph, anchor_graph, atoms, n_atoms);
@@ -367,7 +372,7 @@ int main(int argv, char* argc[])
 
 
 	gpa->gpa = 1;
-	printf("reference gpa atom gpa is %d\n", gpa->number);
+	if (verbose >= 1) printf("reference gpa atom gpa is %d\n", gpa->number);
 
 	get_Shortest_Path(gpa,atoms,n_atoms);
 	save_Shortest_to_GPA(atoms,n_atoms);
@@ -393,18 +398,18 @@ int main(int argv, char* argc[])
 		
 	// Base name in output files
 	set_OutBase(filename,outname,basepath,informat);
-	printf("will output to prefix '%s'\n", outname);
+	if (verbose >= 1) printf("will output to prefix '%s'\n", outname);
 	//printf("basepath is '%s'\n", basepath);
 
 	// Write internal coordinates of neighbouring atoms
 	strcpy(icfile,outname);
 	strcat(icfile,".ic");
-	Write_IC(icfile, atoms, n_atoms, gpa, remove_hydro);
+	Write_IC(icfile, atoms, n_atoms, gpa, remove_hydro, print_filepaths);
 
 	// Write neighbours and atom types and flexible bonds
 	strcpy(inpfile,outname);
 	strcat(inpfile,".inp");
-	Write_INP(inpfile, icfile, atoms, n_atoms, remove_hydro, &outres, &force_outres, gpa, graph);
+	Write_INP(inpfile, icfile, atoms, n_atoms, remove_hydro, &outres, &force_outres, gpa, graph, print_filepaths);
 
 	// write reference PDB file
 	if(reference){
@@ -413,7 +418,7 @@ int main(int argv, char* argc[])
 		strcat(reffile,".pdb");
 
 		buildcc(gpa);
-		Write_REF(reffile, atoms, n_atoms, remove_hydro, &outres, &force_outres);
+		Write_REF(reffile, atoms, n_atoms, remove_hydro, &outres, &force_outres, print_filepaths);
 	}
 
 	// memory dealloc's
@@ -435,9 +440,6 @@ int main(int argv, char* argc[])
 	}
 	free(atoms);
 	free(map_atom);
-
-
-	printf("Done.\n");
 
 	return 0;
 }
@@ -2800,6 +2802,8 @@ void print_command_line(){
 	printf("\t%-50s%-50s\n", "-o <STR>", "sets the output base filename");
 	printf("\t%-50s%-50s\n", "-e <STR>", "sets a residue to extract in the file (only works for .mol2/.pdb files)");
 	printf("\t%-50s%-50s\n", "-c <STR>", "converts a molecule only without processing it to a specified format\n");
+	printf("\t%-50s%-50s\n", "-pf", "prints a line containing the filepath to every written file");
+	printf("\t%-50s%-50s\n", "-d", "deletes tmp files created when converting inout to mol2");
 	printf("\t%-50s%-50s\n", "-hf", "includes hydrogen flexible bonds");
 	printf("\t%-50s%-50s\n", "-wh", "adds hydrogen atoms in output files\n");
 	printf("\t%-50s%-50s\n", "-ref", "outputs the final PDB file from the IC\n");
@@ -2823,7 +2827,7 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			int* hydro_flex, int* remove_hydro, int* force_gpa, float** force_pcg,
 			int* atom_index, residue* force_outres, char* extract_string, int* reference,
 			int* old_types, int* new_types, int* sybyl_types, int* convert_only,
-			int* process_only, int* gen3D, char* outformat, int* target){
+			int* process_only, int* gen3D, char* outformat, int* target, int* print_filepaths, int* delete_tmp){
 
 	int i;
 
@@ -2849,7 +2853,11 @@ void parse_command_line(int argv, char** argc, char* filename, char* outname,int
 			*gen3D=1;
 		}else if(!strcmp(argc[i],"-v")){
 			*verbose=atoi(argc[++i]);
-			//*verbose=1;
+			//*verbose=1
+		}else if(!strcmp(argc[i],"-pf")){
+			*print_filepaths=1;
+		}else if(!strcmp(argc[i],"-d")){
+			*delete_tmp=1;
 		}else if(!strcmp(argc[i],"--help") || !strcmp(argc[i],"-h")){
 			print_command_line();
 			exit(0);
@@ -3548,7 +3556,7 @@ atom* get_Atom_from_coor(const float* coor, atom* atoms, int n_atoms){
 }
 
 void Write_Target(char* original_filename, char* target_filename,
-		  atom* atoms, int n_atoms){
+		  atom* atoms, int n_atoms, const int print_filepaths){
 
 	FILE* infile_ptr = fopen(original_filename,"r");
 	FILE* outfile_ptr = fopen(target_filename,"w");
@@ -3588,9 +3596,10 @@ void Write_Target(char* original_filename, char* target_filename,
 	}
 
 	fclose(outfile_ptr);
+	if (print_filepaths==1) printf("INP_PDB for target file written: %s\n", target_filename);
 }
 
-void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hydro){
+void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hydro, const int print_filepaths){
 
 	int i;
 	FILE* infile_ptr;
@@ -3625,12 +3634,13 @@ void Write_IC(char* filename, atom* atoms, int n_atoms, atom* gpa, int remove_hy
 		gpa->buildlist[1]->coor[2]);
 
 	fclose(infile_ptr);
+	if (print_filepaths==1) printf("IC file written: %s\n", filename);
 
 }
 
 
 void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remove_hydro,
-	       residue* outres, residue* force_outres, atom* gpa, subgraph* graph){
+	       residue* outres, residue* force_outres, atom* gpa, subgraph* graph, const int print_filepaths){
 
 	int i,j;
 	FILE* infile_ptr;
@@ -3742,10 +3752,12 @@ void Write_INP(char* filename, char* icfile, atom* atoms, int n_atoms, int remov
 	fprintf(infile_ptr,"ENDINP\n");
 
 	fclose(infile_ptr);
+	if (print_filepaths==1) printf("INP file written: %s\n", filename);
 
 }
 
-void Write_REF(char* filename, atom* atoms, int n_atoms, int remove_hydro, residue* outres, residue* force_outres){
+void Write_REF(char* filename, atom* atoms, int n_atoms, int remove_hydro, residue* outres, residue* force_outres,
+	const int print_filepaths){
 
 	FILE* infile_ptr = NULL;
 
@@ -3789,6 +3801,7 @@ void Write_REF(char* filename, atom* atoms, int n_atoms, int remove_hydro, resid
 	fprintf(infile_ptr, "END\n");
 
 	fclose(infile_ptr);
+	if (print_filepaths==1) printf("REF for target file written: %s\n", filename);
 
 }
 
