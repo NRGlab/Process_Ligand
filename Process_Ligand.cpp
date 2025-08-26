@@ -191,7 +191,6 @@ int main(int argv, char* argc[])
 	if (verbose >= 1) printf("read %d atoms\n", n_atoms);
 
 	get_Ligand_Center_Geometry(atoms,n_atoms,lig_pcg);
-	
 
 	if(force_pcg != NULL){
 		// Adds up the user-defined PCG
@@ -232,17 +231,22 @@ int main(int argv, char* argc[])
 
 
 	//Print_Connections(atoms,n_atoms);
-	if (verbose >= 1)
-	{
-		if(Tarjan(atoms,n_atoms,scc,&n_scc) != n_atoms){
+	int tarjan_result = Tarjan(atoms, n_atoms, scc, &n_scc);
+
+	if (verbose >= 1) {
+		if (tarjan_result != n_atoms) {
 			printf("molecule is cyclic\n");
-		}else{
+		} else {
 			printf("molecule is acyclic\n");
 		}
 	}
 	
 	// set bonds as flexible that meet criteria
-	if (verbose >= 1) printf("Found %d flexible bond(s)\n", set_Flexible_Bonds(atoms,n_atoms));
+	int n_flexible_bonds = set_Flexible_Bonds(atoms, n_atoms, verbose);
+
+	if (verbose >= 1) {
+		printf("Found %d flexible bond(s)\n", n_flexible_bonds);
+	}
 
 	
 	// divide molecule into sub graphs
@@ -1593,33 +1597,43 @@ void print_bond_status(bond* conect, int status){
 	
 }
 
-int set_Flexible_Bonds(atom* atoms,int n_atoms){
+int set_Flexible_Bonds(atom* atoms,int n_atoms, int verbose){
 
 	int i,j;
 	int flex_counter = 0;
 	atom* atom1_ptr, *atom2_ptr;
 
-	for(i=0; i<n_atoms; i++)
-	{
-		atom1_ptr=&atoms[i];
+	for (i = 0; i < n_atoms; i++) {
+		atom1_ptr = &atoms[i];
 
-		if(is_Hydrogen(atom1_ptr)) { continue; }
-		else if(is_Methyl(atom1_ptr)) { continue; }
-		
-		for(j=1; j<=atom1_ptr->n_bonds; j++)
-		{
+		if (is_Hydrogen(atom1_ptr)) { continue; }
+		else if (is_Methyl(atom1_ptr)) { continue; }
+
+		for (j = 1; j <= atom1_ptr->n_bonds; j++) {
 			atom2_ptr = atom1_ptr->conect[j].to;
 
-			if(is_Hydrogen(atom2_ptr)) { continue; }			
-			
-			else if(atom1_ptr->conect[j].type != 1 || atom1_ptr->conect[j].cyclic) {
-				//print_bond_status(&atom1_ptr->conect[j],0);
+			if (is_Hydrogen(atom2_ptr)) { continue; }
+			else if (atom1_ptr->conect[j].type != 1 || atom1_ptr->conect[j].cyclic) {
+				if (verbose >= 1) print_bond_status(&atom1_ptr->conect[j], 0);
 				continue;
 			}
-			else if(is_Terminal(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],1); continue; }
-			else if(is_Imine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],2); continue; }
+			if (is_Terminal(&atom1_ptr->conect[j])) {
+				if (verbose >= 1) print_bond_status(&atom1_ptr->conect[j], 1);
+				continue;
+			} else if (is_Imine(&atom1_ptr->conect[j])) {
+				if (verbose >= 1) print_bond_status(&atom1_ptr->conect[j], 2);
+				continue;
+			} else if (is_Triple(&atom1_ptr->conect[j])) {
+				if (verbose >= 1) print_bond_status(&atom1_ptr->conect[j], 4);
+				continue;
+			} else if (is_Guanidium(&atom1_ptr->conect[j])) {
+				if (verbose >= 1) print_bond_status(&atom1_ptr->conect[j], 12);
+				continue;
+			} else if (is_MetaAmine(&atom1_ptr->conect[j])) {
+				if (verbose >= 1) print_bond_status(&atom1_ptr->conect[j], 14);
+				continue;
+			}
 			//else if(is_Amide(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],3); continue; }
-			else if(is_Triple(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],4); continue; }
 			//else if(is_Triple(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],4); continue; }
 			//else if(is_Planar_Amine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],5); continue; }
 			//else if(is_Aromatic_Amidine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],6); continue; }
@@ -1628,13 +1642,12 @@ int set_Flexible_Bonds(atom* atoms,int n_atoms){
 			//else if(is_Aromatic_Carboxylate(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],9); continue; }
 			//else if(is_Aromatic_Amine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
 			//else if(is_Between_Perpendicular_Aromatic(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],10); continue; }
-			else if(is_Guanidium(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],12); continue; }
 			//else if(is_Meta(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],13); continue; }
-			else if(is_MetaAmine(&atom1_ptr->conect[j])){ print_bond_status(&atom1_ptr->conect[j],14); continue; }
-			
 			atom1_ptr->conect[j].flexible = 1;
-			
-			printf("set bond[%d][%d] as flexible\n", atom1_ptr->number, atom2_ptr->number);
+			if (verbose >= 1)
+			{
+				printf("set bond[%d][%d] as flexible\n", atom1_ptr->number, atom2_ptr->number);
+			}
 			flex_counter++;
 		}
 	}

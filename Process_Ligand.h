@@ -142,7 +142,7 @@ static const char Types_SOBOLEV[11][20] = { "None", "Hydrophilic", "Acceptor", "
 
 
 void print_command_line();
-void parse_command_line(int argv, char** argc, char* filename, char* outname,int* verbose,
+void parse_command_line(int argv, char** argc, char* filename, char* outname, int* verbose,
 			int* hydro_flex, int* remove_hydro,int* force_gpa, float** force_pcg,
 			int* atom_index, residue* res, char* extract, int* reference, 
 			int* old_types, int* new_types, int* babel_types, int* convert_only, 
@@ -190,7 +190,7 @@ void set_AtomTypes_SOBOLEV(atom* atomzero, int verbose);
 void set_AtomTypes_GAUDREAULT(atom* atomzero, int verbose);
 void set_AtomTypes_SYBYL(atom* atomzero, int verbose);
 void atomtype_by_charge(atom* atomzero);
-int set_Flexible_Bonds(atom* atoms, int n_atoms);
+int set_Flexible_Bonds(atom* atoms, int n_atoms, int verbose);
 void set_Cyclic_Bonds(atom* atoms, int n_atoms,int *scc, int n_scc);
 int Bond_Exists(bond* b, bond* blist[], int nb);
 void print_bond_status(bond* conect, int status);
